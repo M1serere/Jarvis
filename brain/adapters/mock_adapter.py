@@ -11,6 +11,11 @@ class MockBrainAdapter(BaseBrainAdapter):
         r"(https?://[^\s]+|[a-zA-Z0-9\-]+\.[a-zA-Z]{2,}(?:/[^\s]*)?)"
     )
 
+    CREATE_FILE_WITH_TEXT_PATTERN = re.compile(
+        r"создай файл\s+([^\s]+)\s+с текстом\s+(.+)",
+        re.IGNORECASE,
+    )
+
     CREATE_FILE_PATTERN = re.compile(
         r"создай файл\s+([^\s]+)",
         re.IGNORECASE,
@@ -18,6 +23,21 @@ class MockBrainAdapter(BaseBrainAdapter):
 
     OPEN_FILE_PATTERN = re.compile(
         r"открой файл\s+([^\s]+)",
+        re.IGNORECASE,
+    )
+
+    APPEND_FILE_PATTERN = re.compile(
+        r"добавь в файл\s+([^\s]+)\s+текст\s+(.+)",
+        re.IGNORECASE,
+    )
+
+    REPLACE_FILE_TEXT_PATTERN = re.compile(
+        r"замени в файле\s+([^\s]+)\s+(.+)\s+на\s+(.+)",
+        re.IGNORECASE,
+    )
+
+    REWRITE_FILE_PATTERN = re.compile(
+        r"измени файл\s+([^\s]+)\s+на текст\s+(.+)",
         re.IGNORECASE,
     )
 
@@ -38,16 +58,55 @@ class MockBrainAdapter(BaseBrainAdapter):
         if "как дела" in text:
             return AssistantDecision(
                 decision_type="respond",
-                response_text="Работаю стабильно. Теперь я уже умею открывать сайты, искать в Google и работать с файлами."
+                response_text=(
+                    "Работаю стабильно. Теперь я умею открывать сайты, искать в Google "
+                    "и работать с файлами."
+                )
             )
 
         if "что ты умеешь" in text:
             return AssistantDecision(
                 decision_type="respond",
                 response_text=(
-                    "Сейчас я умею отвечать текстом, открывать сайты, выполнять поиск в Google, "
-                    "создавать файлы и читать файлы из рабочей папки."
+                    "Сейчас я умею отвечать текстом, открывать сайты, искать в Google, "
+                    "создавать файлы, читать файлы и изменять файлы в рабочей папке."
                 )
+            )
+
+        create_with_text = self._extract_create_file_with_text(user_text)
+        if create_with_text:
+            return AssistantDecision(
+                decision_type="tool_call",
+                tool_name="create_file",
+                tool_args=create_with_text,
+                requires_confirmation=False,
+            )
+
+        rewrite_file = self._extract_rewrite_file(user_text)
+        if rewrite_file:
+            return AssistantDecision(
+                decision_type="tool_call",
+                tool_name="edit_file",
+                tool_args=rewrite_file,
+                requires_confirmation=False,
+            )
+
+        append_file = self._extract_append_file(user_text)
+        if append_file:
+            return AssistantDecision(
+                decision_type="tool_call",
+                tool_name="edit_file",
+                tool_args=append_file,
+                requires_confirmation=False,
+            )
+
+        replace_file_text = self._extract_replace_file_text(user_text)
+        if replace_file_text:
+            return AssistantDecision(
+                decision_type="tool_call",
+                tool_name="edit_file",
+                tool_args=replace_file_text,
+                requires_confirmation=False,
             )
 
         create_filename = self._extract_create_file_name(user_text)
@@ -56,6 +115,7 @@ class MockBrainAdapter(BaseBrainAdapter):
                 decision_type="tool_call",
                 tool_name="create_file",
                 tool_args={"filename": create_filename, "content": ""},
+                requires_confirmation=False,
             )
 
         open_filename = self._extract_open_file_name(user_text)
@@ -120,6 +180,15 @@ class MockBrainAdapter(BaseBrainAdapter):
 
         return None
 
+    def _extract_create_file_with_text(self, text: str) -> dict[str, str] | None:
+        match = self.CREATE_FILE_WITH_TEXT_PATTERN.search(text)
+        if match:
+            return {
+                "filename": match.group(1).strip(),
+                "content": match.group(2).strip(),
+            }
+        return None
+
     def _extract_create_file_name(self, text: str) -> str | None:
         match = self.CREATE_FILE_PATTERN.search(text)
         if match:
@@ -130,4 +199,35 @@ class MockBrainAdapter(BaseBrainAdapter):
         match = self.OPEN_FILE_PATTERN.search(text)
         if match:
             return match.group(1).strip()
+        return None
+
+    def _extract_append_file(self, text: str) -> dict[str, str] | None:
+        match = self.APPEND_FILE_PATTERN.search(text)
+        if match:
+            return {
+                "filename": match.group(1).strip(),
+                "mode": "append",
+                "content": match.group(2).strip(),
+            }
+        return None
+
+    def _extract_replace_file_text(self, text: str) -> dict[str, str] | None:
+        match = self.REPLACE_FILE_TEXT_PATTERN.search(text)
+        if match:
+            return {
+                "filename": match.group(1).strip(),
+                "mode": "replace_text",
+                "old_text": match.group(2).strip(),
+                "new_text": match.group(3).strip(),
+            }
+        return None
+
+    def _extract_rewrite_file(self, text: str) -> dict[str, str] | None:
+        match = self.REWRITE_FILE_PATTERN.search(text)
+        if match:
+            return {
+                "filename": match.group(1).strip(),
+                "mode": "replace_all",
+                "content": match.group(2).strip(),
+            }
         return None

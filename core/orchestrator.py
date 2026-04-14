@@ -13,8 +13,8 @@ class JarvisOrchestrator:
         self.logger = setup_logger()
         self.brain = Brain()
         self.memory = SessionMemory()
-        self.safety = SafetyGuard()
         self.tools = ToolRegistry()
+        self.safety = SafetyGuard(tool_registry=self.tools)
 
         self.logger.debug("Available tools: %s", self.tools.list_tools())
 
@@ -34,7 +34,7 @@ class JarvisOrchestrator:
 
         approved = self.safety.approve(decision)
         if not approved:
-            response_text = "Действие не прошло проверку безопасности."
+            response_text = self.safety.get_block_message(decision)
             self.memory.add_assistant_message(response_text)
             self.logger.warning("Decision blocked by safety guard.")
 

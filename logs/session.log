@@ -56,3 +56,51 @@
 2026-04-14 22:30:41,010 | INFO | jarvis | Executing tool: browser_search with args={'query': 'новости python'}
 2026-04-14 22:30:41,030 | INFO | jarvis | Tool result: Ищу в Google: новости python
 2026-04-14 22:30:41,030 | DEBUG | jarvis | Assistant response: Ищу в Google: новости python
+2026-04-14 22:45:47,939 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.'}]
+2026-04-14 22:45:50,732 | INFO | jarvis | Received user input: создай файл notes.txt
+2026-04-14 22:45:50,733 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"create_file","tool_args":{"filename":"notes.txt","content":""}}
+2026-04-14 22:45:50,733 | INFO | jarvis | Executing tool: create_file with args={'filename': 'notes.txt', 'content': ''}
+2026-04-14 22:45:50,734 | INFO | jarvis | Tool result: Файл создан: notes.txt
+2026-04-14 22:45:50,734 | DEBUG | jarvis | Assistant response: Файл создан: notes.txt
+2026-04-14 22:45:59,736 | INFO | jarvis | Received user input: открой файл notes.txt
+2026-04-14 22:45:59,737 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"open_file","tool_args":{"filename":"notes.txt"}}
+2026-04-14 22:45:59,738 | INFO | jarvis | Executing tool: open_file with args={'filename': 'notes.txt'}
+2026-04-14 22:45:59,738 | INFO | jarvis | Tool result: Файл пуст: notes.txt
+2026-04-14 22:45:59,739 | DEBUG | jarvis | Assistant response: Файл пуст: notes.txt
+2026-04-14 23:10:26,823 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}]
+2026-04-14 23:10:40,723 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}]
+2026-04-14 23:10:40,724 | INFO | jarvis | Received user input: ??????
+2026-04-14 23:10:40,724 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Я получил сообщение: '??????'. Сейчас я работаю через MockBrainAdapter и умею вызывать несколько инструментов.", "tool_name": null, "tool_args": {}, "requires_confirmation": false}
+2026-04-14 23:10:40,724 | DEBUG | jarvis | Assistant response: Я получил сообщение: '??????'. Сейчас я работаю через MockBrainAdapter и умею вызывать несколько инструментов.
+2026-04-14 23:11:06,234 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}]
+2026-04-14 23:11:19,960 | INFO | jarvis | Received user input: создай файл todo.txt с текстом купить молоко
+2026-04-14 23:11:19,960 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "create_file", "tool_args": {"filename": "todo.txt", "content": "купить молоко"}, "requires_confirmation": true}
+2026-04-14 23:11:19,961 | WARNING | jarvis | Decision blocked by safety guard.
+2026-04-14 23:13:53,421 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}]
+2026-04-14 23:13:56,678 | INFO | jarvis | Received user input: создай файл todo.txt с текстом купить молоко
+2026-04-14 23:13:56,678 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "create_file", "tool_args": {"filename": "todo.txt", "content": "купить молоко"}, "requires_confirmation": false}
+2026-04-14 23:13:56,678 | INFO | jarvis | Executing tool: create_file with args={'filename': 'todo.txt', 'content': 'купить молоко'}
+2026-04-14 23:13:56,679 | INFO | jarvis | Tool result: Файл создан: todo.txt. Текст записан.
+2026-04-14 23:13:56,680 | DEBUG | jarvis | Assistant response: Файл создан: todo.txt. Текст записан.
+2026-04-14 23:14:09,286 | INFO | jarvis | Received user input: открой файл todo.txt
+2026-04-14 23:14:09,286 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "open_file", "tool_args": {"filename": "todo.txt"}, "requires_confirmation": false}
+2026-04-14 23:14:09,286 | INFO | jarvis | Executing tool: open_file with args={'filename': 'todo.txt'}
+2026-04-14 23:14:09,299 | INFO | jarvis | Tool result: Содержимое файла todo.txt:
+купить молоко
+2026-04-14 23:14:09,299 | DEBUG | jarvis | Assistant response: Содержимое файла todo.txt:
+купить молоко
+2026-04-14 23:14:18,266 | INFO | jarvis | Received user input: добавь в файл todo.txt текст и хлеб
+2026-04-14 23:14:18,267 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "edit_file", "tool_args": {"filename": "todo.txt", "mode": "append", "content": "и хлеб"}, "requires_confirmation": false}
+2026-04-14 23:14:18,267 | INFO | jarvis | Executing tool: edit_file with args={'filename': 'todo.txt', 'mode': 'append', 'content': 'и хлеб'}
+2026-04-14 23:14:18,268 | INFO | jarvis | Tool result: Текст добавлен в файл: todo.txt
+2026-04-14 23:14:18,268 | DEBUG | jarvis | Assistant response: Текст добавлен в файл: todo.txt
+2026-04-14 23:14:43,322 | INFO | jarvis | Received user input: замени в файле todo.txt молоко на молоко и сыр
+2026-04-14 23:14:43,323 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "edit_file", "tool_args": {"filename": "todo.txt", "mode": "replace_text", "old_text": "молоко", "new_text": "молоко и сыр"}, "requires_confirmation": false}
+2026-04-14 23:14:43,323 | INFO | jarvis | Executing tool: edit_file with args={'filename': 'todo.txt', 'mode': 'replace_text', 'old_text': 'молоко', 'new_text': 'молоко и сыр'}
+2026-04-14 23:14:43,325 | INFO | jarvis | Tool result: Текст в файле заменён: todo.txt
+2026-04-14 23:14:43,325 | DEBUG | jarvis | Assistant response: Текст в файле заменён: todo.txt
+2026-04-14 23:14:55,488 | INFO | jarvis | Received user input: измени файл todo.txt на текст новый список дел
+2026-04-14 23:14:55,489 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "edit_file", "tool_args": {"filename": "todo.txt", "mode": "replace_all", "content": "новый список дел"}, "requires_confirmation": false}
+2026-04-14 23:14:55,489 | INFO | jarvis | Executing tool: edit_file with args={'filename': 'todo.txt', 'mode': 'replace_all', 'content': 'новый список дел'}
+2026-04-14 23:14:55,490 | INFO | jarvis | Tool result: Файл полностью обновлён: todo.txt
+2026-04-14 23:14:55,490 | DEBUG | jarvis | Assistant response: Файл полностью обновлён: todo.txt

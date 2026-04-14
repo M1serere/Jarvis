@@ -5,6 +5,7 @@ from typing import Any
 from tools.base import BaseTool
 from tools.implementations.browser_search import BrowserSearchTool
 from tools.implementations.create_file import CreateFileTool
+from tools.implementations.edit_file import EditFileTool
 from tools.implementations.open_file import OpenFileTool
 from tools.implementations.open_url import OpenUrlTool
 
@@ -19,12 +20,16 @@ class ToolRegistry:
         self.register(BrowserSearchTool())
         self.register(CreateFileTool())
         self.register(OpenFileTool())
+        self.register(EditFileTool())
 
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool
 
     def has_tool(self, tool_name: str) -> bool:
         return tool_name in self._tools
+
+    def get_tool(self, tool_name: str) -> BaseTool | None:
+        return self._tools.get(tool_name)
 
     def execute(self, tool_name: str, args: dict[str, Any]) -> str:
         tool = self._tools.get(tool_name)
@@ -34,6 +39,10 @@ class ToolRegistry:
 
     def list_tools(self) -> list[dict[str, str]]:
         return [
-            {"name": tool.name, "description": tool.description}
+            {
+                "name": tool.name,
+                "description": tool.description,
+                "risk_level": tool.risk_level,
+            }
             for tool in self._tools.values()
         ]

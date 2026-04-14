@@ -10,6 +10,7 @@ from tools.base import BaseTool
 class CreateFileTool(BaseTool):
     name = "create_file"
     description = "Создаёт текстовый файл в рабочей папке ассистента."
+    risk_level = "confirm"
 
     def run(self, args: dict[str, Any]) -> str:
         filename = str(args.get("filename", "")).strip()
@@ -25,4 +26,7 @@ class CreateFileTool(BaseTool):
             return f"Файл уже существует: {safe_filename}"
 
         file_path.write_text(content, encoding="utf-8")
+
+        if content.strip():
+            return f"Файл создан: {safe_filename}. Текст записан."
         return f"Файл создан: {safe_filename}"

@@ -10,6 +10,7 @@ from tools.base import BaseTool
 class OpenFileTool(BaseTool):
     name = "open_file"
     description = "Открывает текстовый файл из рабочей папки и читает его содержимое."
+    risk_level = "safe"
 
     def run(self, args: dict[str, Any]) -> str:
         filename = str(args.get("filename", "")).strip()
@@ -27,9 +28,17 @@ class OpenFileTool(BaseTool):
             return f"Это не файл: {safe_filename}"
 
         content = file_path.read_text(encoding="utf-8")
-        content_preview = content[:1000]
-
-        if not content_preview:
+        if not content:
             return f"Файл пуст: {safe_filename}"
 
-        return f"Содержимое файла {safe_filename}:\n{content_preview}"
+        max_preview_length = 1500
+        preview = content[:max_preview_length]
+
+        if len(content) > max_preview_length:
+            return (
+                f"Содержимое файла {safe_filename} "
+                f"(показаны первые {max_preview_length} символов из {len(content)}):\n"
+                f"{preview}"
+            )
+
+        return f"Содержимое файла {safe_filename}:\n{preview}"

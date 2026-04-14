@@ -52,16 +52,16 @@ class MockBrainAdapter(BaseBrainAdapter):
         if "привет" in text:
             return AssistantDecision(
                 decision_type="respond",
-                response_text="Привет. Я на связи."
+                response_text="Привет. Я на связи.",
             )
 
         if "как дела" in text:
             return AssistantDecision(
                 decision_type="respond",
                 response_text=(
-                    "Работаю стабильно. Теперь я умею открывать сайты, искать в Google "
-                    "и работать с файлами."
-                )
+                    "Работаю стабильно. Теперь я умею открывать сайты, искать в Google, "
+                    "работать с файлами, получать погоду и новости программирования."
+                ),
             )
 
         if "что ты умеешь" in text:
@@ -69,8 +69,23 @@ class MockBrainAdapter(BaseBrainAdapter):
                 decision_type="respond",
                 response_text=(
                     "Сейчас я умею отвечать текстом, открывать сайты, искать в Google, "
-                    "создавать файлы, читать файлы и изменять файлы в рабочей папке."
-                )
+                    "создавать файлы, читать файлы, изменять файлы в рабочей папке, "
+                    "получать погоду и свежие новости программирования."
+                ),
+            )
+
+        if self._is_weather_request(text):
+            return AssistantDecision(
+                decision_type="tool_call",
+                tool_name="get_weather",
+                tool_args={},
+            )
+
+        if self._is_programming_news_request(text):
+            return AssistantDecision(
+                decision_type="tool_call",
+                tool_name="get_programming_news",
+                tool_args={"limit": 5},
             )
 
         create_with_text = self._extract_create_file_with_text(user_text)
@@ -145,7 +160,7 @@ class MockBrainAdapter(BaseBrainAdapter):
 
             return AssistantDecision(
                 decision_type="respond",
-                response_text="Я понял, что нужно открыть сайт, но не увидел адрес."
+                response_text="Я понял, что нужно открыть сайт, но не увидел адрес.",
             )
 
         return AssistantDecision(
@@ -153,8 +168,27 @@ class MockBrainAdapter(BaseBrainAdapter):
             response_text=(
                 f"Я получил сообщение: '{user_text}'. "
                 f"Сейчас я работаю через MockBrainAdapter и умею вызывать несколько инструментов."
-            )
+            ),
         )
+
+    def _is_weather_request(self, text: str) -> bool:
+        triggers = [
+            "какая сегодня погода",
+            "погода сегодня",
+            "что по погоде",
+            "какая погода",
+        ]
+        return any(trigger in text for trigger in triggers)
+
+    def _is_programming_news_request(self, text: str) -> bool:
+        triggers = [
+            "какие новости программирования",
+            "новости программирования",
+            "новости python",
+            "новости разработки",
+            "tech news",
+        ]
+        return any(trigger in text for trigger in triggers)
 
     def _extract_url(self, text: str) -> str | None:
         match = self.URL_PATTERN.search(text)

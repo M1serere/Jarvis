@@ -128,3 +128,30 @@
 2026-04-14 23:44:10,981 | INFO | jarvis | Executing tool: create_file with args={'filename': 'notes.txt', 'content': ''}
 2026-04-14 23:44:10,982 | INFO | jarvis | Tool result: Файл создан: notes.txt
 2026-04-14 23:44:10,982 | DEBUG | jarvis | Assistant response: Файл создан: notes.txt
+2026-04-15 00:02:49,054 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}]
+2026-04-15 00:07:59,261 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}]
+2026-04-15 00:08:02,243 | INFO | jarvis | Received user input: какая сегодня погода
+2026-04-15 00:08:02,243 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "get_weather", "tool_args": {}, "requires_confirmation": false}
+2026-04-15 00:08:02,243 | INFO | jarvis | Executing tool: get_weather with args={}
+2026-04-15 00:08:05,411 | INFO | jarvis | Tool result: Погода сегодня в Dallas: сейчас 23.0°C, днём максимум 27.6°C, ночью минимум 22.5°C, ветер 16.3 км/ч.
+2026-04-15 00:08:05,411 | DEBUG | jarvis | Assistant response: Погода сегодня в Dallas: сейчас 23.0°C, днём максимум 27.6°C, ночью минимум 22.5°C, ветер 16.3 км/ч.
+2026-04-15 00:08:21,410 | INFO | jarvis | Received user input: какие новости программирования
+2026-04-15 00:08:21,411 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "get_programming_news", "tool_args": {"limit": 5}, "requires_confirmation": false}
+2026-04-15 00:08:21,411 | INFO | jarvis | Executing tool: get_programming_news with args={'limit': 5}
+2026-04-15 00:08:28,403 | INFO | jarvis | Tool result: Свежие новости программирования:
+1. Two Months After I Gave an AI $100 and No Instructions
+2. The exponential curve behind open source backlogs
+3. The Case Against Gameplay Loops
+4. NimConf 2026: Dates Announced, Registrations Open
+5. What is jj and why should I care?
+2026-04-15 00:08:28,403 | DEBUG | jarvis | Assistant response: Свежие новости программирования:
+1. Two Months After I Gave an AI $100 and No Instructions
+2. The exponential curve behind open source backlogs
+3. The Case Against Gameplay Loops
+4. NimConf 2026: Dates Announced, Registrations Open
+5. What is jj and why should I care?
+2026-04-15 00:08:42,172 | INFO | jarvis | Received user input: найди в гугле fastapi tutorial
+2026-04-15 00:08:42,173 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "browser_search", "tool_args": {"query": "fastapi tutorial"}, "requires_confirmation": false}
+2026-04-15 00:08:42,173 | INFO | jarvis | Executing tool: browser_search with args={'query': 'fastapi tutorial'}
+2026-04-15 00:08:42,234 | INFO | jarvis | Tool result: Ищу в Google: fastapi tutorial
+2026-04-15 00:08:42,234 | DEBUG | jarvis | Assistant response: Ищу в Google: fastapi tutorial

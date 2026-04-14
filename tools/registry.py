@@ -6,6 +6,8 @@ from tools.base import BaseTool
 from tools.implementations.browser_search import BrowserSearchTool
 from tools.implementations.create_file import CreateFileTool
 from tools.implementations.edit_file import EditFileTool
+from tools.implementations.get_programming_news import GetProgrammingNewsTool
+from tools.implementations.get_weather import GetWeatherTool
 from tools.implementations.open_file import OpenFileTool
 from tools.implementations.open_url import OpenUrlTool
 
@@ -21,6 +23,8 @@ class ToolRegistry:
         self.register(CreateFileTool())
         self.register(OpenFileTool())
         self.register(EditFileTool())
+        self.register(GetWeatherTool())
+        self.register(GetProgrammingNewsTool())
 
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool

@@ -27,3 +27,14 @@ LOG_MODE: LogMode = get_log_mode()
 
 WORKSPACE_DIR = BASE_DIR / "workspace"
 WORKSPACE_DIR.mkdir(exist_ok=True)
+
+HTTP_TIMEOUT_SECONDS = 10
+
+DEFAULT_WEATHER_LATITUDE = 32.7767
+DEFAULT_WEATHER_LONGITUDE = -96.7970
+DEFAULT_WEATHER_LOCATION_NAME = "Dallas"
+
+PROGRAMMING_NEWS_FEEDS = [
+    "https://feeds.feedburner.com/PythonInsider",
+    "https://hnrss.org/frontpage",
+]

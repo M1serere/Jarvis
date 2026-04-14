@@ -1,0 +1,9 @@
+2026-04-14 20:55:24,961 | INFO | jarvis | Received user input: привет
+2026-04-14 20:55:24,961 | INFO | jarvis | Brain decision: {"decision_type":"respond","response_text":"Привет. Я на связи.","tool_name":null,"tool_args":{}}
+2026-04-14 20:55:24,962 | INFO | jarvis | Assistant response: Привет. Я на связи.
+2026-04-14 20:55:41,474 | INFO | jarvis | Received user input: как дела
+2026-04-14 20:55:41,475 | INFO | jarvis | Brain decision: {"decision_type":"respond","response_text":"Работаю в тестовом режиме. Но ядро уже запускается.","tool_name":null,"tool_args":{}}
+2026-04-14 20:55:41,475 | INFO | jarvis | Assistant response: Работаю в тестовом режиме. Но ядро уже запускается.
+2026-04-14 20:55:59,648 | INFO | jarvis | Received user input: открой браузер
+2026-04-14 20:55:59,648 | INFO | jarvis | Brain decision: {"decision_type":"respond","response_text":"Я получил сообщение: 'открой браузер'. Пока я работаю без настоящей модели, но core уже готов.","tool_name":null,"tool_args":{}}
+2026-04-14 20:55:59,649 | INFO | jarvis | Assistant response: Я получил сообщение: 'открой браузер'. Пока я работаю без настоящей модели, но core уже готов.

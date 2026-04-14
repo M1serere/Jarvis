@@ -40,3 +40,19 @@
 2026-04-14 21:41:26,471 | INFO | jarvis | Executing tool: open_url with args={'url': 'google.com'}
 2026-04-14 21:41:26,527 | INFO | jarvis | Tool result: Открываю сайт: https://google.com
 2026-04-14 21:41:26,528 | DEBUG | jarvis | Assistant response: Открываю сайт: https://google.com
+2026-04-14 22:30:09,434 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.'}]
+2026-04-14 22:30:13,115 | INFO | jarvis | Received user input: найди в гугле python asyncio
+2026-04-14 22:30:13,116 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"browser_search","tool_args":{"query":"python asyncio"}}
+2026-04-14 22:30:13,116 | INFO | jarvis | Executing tool: browser_search with args={'query': 'python asyncio'}
+2026-04-14 22:30:13,182 | INFO | jarvis | Tool result: Ищу в Google: python asyncio
+2026-04-14 22:30:13,183 | DEBUG | jarvis | Assistant response: Ищу в Google: python asyncio
+2026-04-14 22:30:27,474 | INFO | jarvis | Received user input: поищи в гугле погода сегодня
+2026-04-14 22:30:27,474 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"browser_search","tool_args":{"query":"погода сегодня"}}
+2026-04-14 22:30:27,475 | INFO | jarvis | Executing tool: browser_search with args={'query': 'погода сегодня'}
+2026-04-14 22:30:27,503 | INFO | jarvis | Tool result: Ищу в Google: погода сегодня
+2026-04-14 22:30:27,504 | DEBUG | jarvis | Assistant response: Ищу в Google: погода сегодня
+2026-04-14 22:30:41,009 | INFO | jarvis | Received user input: google новости python
+2026-04-14 22:30:41,009 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"browser_search","tool_args":{"query":"новости python"}}
+2026-04-14 22:30:41,010 | INFO | jarvis | Executing tool: browser_search with args={'query': 'новости python'}
+2026-04-14 22:30:41,030 | INFO | jarvis | Tool result: Ищу в Google: новости python
+2026-04-14 22:30:41,030 | DEBUG | jarvis | Assistant response: Ищу в Google: новости python

@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from tools.base import BaseTool
+from tools.implementations.browser_search import BrowserSearchTool
+from tools.implementations.create_file import CreateFileTool
+from tools.implementations.open_file import OpenFileTool
 from tools.implementations.open_url import OpenUrlTool
 
 
@@ -13,6 +16,9 @@ class ToolRegistry:
 
     def _register_default_tools(self) -> None:
         self.register(OpenUrlTool())
+        self.register(BrowserSearchTool())
+        self.register(CreateFileTool())
+        self.register(OpenFileTool())
 
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool

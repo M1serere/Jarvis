@@ -24,3 +24,6 @@ def get_log_mode() -> LogMode:
 
 
 LOG_MODE: LogMode = get_log_mode()
+
+WORKSPACE_DIR = BASE_DIR / "workspace"
+WORKSPACE_DIR.mkdir(exist_ok=True)

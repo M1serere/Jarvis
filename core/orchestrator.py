@@ -16,6 +16,8 @@ class JarvisOrchestrator:
         self.safety = SafetyGuard()
         self.tools = ToolRegistry()
 
+        self.logger.debug("Available tools: %s", self.tools.list_tools())
+
     def handle_user_input(self, text: str) -> OrchestratorResponse:
         self.logger.info("Received user input: %s", text)
 

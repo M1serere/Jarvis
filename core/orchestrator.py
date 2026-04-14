@@ -48,7 +48,7 @@ class JarvisOrchestrator:
             response_text = decision.response_text
 
         self.memory.add_assistant_message(response_text)
-        self.logger.info("Assistant response: %s", response_text)
+        self.logger.debug("Assistant response: %s", response_text)
 
         return OrchestratorResponse(
             response_text=response_text,

@@ -32,3 +32,11 @@
 2026-04-14 21:15:56,276 | INFO | jarvis | Executing tool: open_url with args={'url': 'openai.com'}
 2026-04-14 21:15:56,299 | INFO | jarvis | Tool result: Открываю сайт: https://openai.com
 2026-04-14 21:15:56,299 | INFO | jarvis | Assistant response: Открываю сайт: https://openai.com
+2026-04-14 21:41:12,143 | INFO | jarvis | Received user input: привет
+2026-04-14 21:41:12,143 | INFO | jarvis | Brain decision: {"decision_type":"respond","response_text":"Привет. Я на связи.","tool_name":null,"tool_args":{}}
+2026-04-14 21:41:12,144 | DEBUG | jarvis | Assistant response: Привет. Я на связи.
+2026-04-14 21:41:26,470 | INFO | jarvis | Received user input: открой сайт google.com
+2026-04-14 21:41:26,471 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"open_url","tool_args":{"url":"google.com"}}
+2026-04-14 21:41:26,471 | INFO | jarvis | Executing tool: open_url with args={'url': 'google.com'}
+2026-04-14 21:41:26,527 | INFO | jarvis | Tool result: Открываю сайт: https://google.com
+2026-04-14 21:41:26,528 | DEBUG | jarvis | Assistant response: Открываю сайт: https://google.com

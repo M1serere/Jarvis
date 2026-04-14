@@ -22,7 +22,12 @@ class JarvisOrchestrator:
         user_message = UserMessage(text=text)
         self.memory.add_user_message(text)
 
-        decision = self.brain.decide(user_message)
+        context = self.memory.get_recent(limit=10)
+
+        decision = self.brain.decide(
+            user_text=user_message.text,
+            conversation_context=context,
+        )
         self.logger.info("Brain decision: %s", decision.model_dump_json())
 
         approved = self.safety.approve(decision)

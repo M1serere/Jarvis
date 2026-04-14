@@ -1,25 +1,23 @@
 from __future__ import annotations
 
-from core.models import AssistantDecision, UserMessage
+from brain.adapters.base import BaseBrainAdapter
+from brain.adapters.mock_adapter import MockBrainAdapter
+from brain.prompts import JARVIS_SYSTEM_PROMPT
+from core.models import AssistantDecision
 
 
 class Brain:
-    def decide(self, message: UserMessage) -> AssistantDecision:
-        text = message.text.lower()
+    def __init__(self, adapter: BaseBrainAdapter | None = None) -> None:
+        self.adapter = adapter or MockBrainAdapter()
+        self.system_prompt = JARVIS_SYSTEM_PROMPT
 
-        if "привет" in text:
-            return AssistantDecision(
-                decision_type="respond",
-                response_text="Привет. Я на связи."
-            )
-
-        if "как дела" in text:
-            return AssistantDecision(
-                decision_type="respond",
-                response_text="Работаю в тестовом режиме. Но ядро уже запускается."
-            )
-
-        return AssistantDecision(
-            decision_type="respond",
-            response_text=f"Я получил сообщение: '{message.text}'. Пока я работаю без настоящей модели, но core уже готов."
+    def decide(
+        self,
+        user_text: str,
+        conversation_context: list[dict[str, str]],
+    ) -> AssistantDecision:
+        return self.adapter.decide(
+            user_text=user_text,
+            conversation_context=conversation_context,
+            system_prompt=self.system_prompt,
         )

@@ -16,3 +16,19 @@
 2026-04-14 21:03:45,115 | INFO | jarvis | Received user input: что ты умеешь
 2026-04-14 21:03:45,116 | INFO | jarvis | Brain decision: {"decision_type":"respond","response_text":"Пока я работаю в тестовом режиме. Сейчас у меня есть оркестратор, память сессии, логирование и отдельный слой brain adapter для будущей модели.","tool_name":null,"tool_args":{}}
 2026-04-14 21:03:45,116 | INFO | jarvis | Assistant response: Пока я работаю в тестовом режиме. Сейчас у меня есть оркестратор, память сессии, логирование и отдельный слой brain adapter для будущей модели.
+2026-04-14 21:15:10,210 | INFO | jarvis | Received user input: привет
+2026-04-14 21:15:10,211 | INFO | jarvis | Brain decision: {"decision_type":"respond","response_text":"Привет. Я на связи.","tool_name":null,"tool_args":{}}
+2026-04-14 21:15:10,211 | INFO | jarvis | Assistant response: Привет. Я на связи.
+2026-04-14 21:15:19,965 | INFO | jarvis | Received user input: что ты умеешь
+2026-04-14 21:15:19,966 | INFO | jarvis | Brain decision: {"decision_type":"respond","response_text":"Сейчас я умею отвечать текстом и вызывать первый инструмент: открытие сайтов в браузере.","tool_name":null,"tool_args":{}}
+2026-04-14 21:15:19,966 | INFO | jarvis | Assistant response: Сейчас я умею отвечать текстом и вызывать первый инструмент: открытие сайтов в браузере.
+2026-04-14 21:15:31,959 | INFO | jarvis | Received user input: открой сайт google.com
+2026-04-14 21:15:31,964 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"open_url","tool_args":{"url":"google.com"}}
+2026-04-14 21:15:31,965 | INFO | jarvis | Executing tool: open_url with args={'url': 'google.com'}
+2026-04-14 21:15:32,042 | INFO | jarvis | Tool result: Открываю сайт: https://google.com
+2026-04-14 21:15:32,042 | INFO | jarvis | Assistant response: Открываю сайт: https://google.com
+2026-04-14 21:15:56,275 | INFO | jarvis | Received user input: открой openai.com
+2026-04-14 21:15:56,276 | INFO | jarvis | Brain decision: {"decision_type":"tool_call","response_text":"","tool_name":"open_url","tool_args":{"url":"openai.com"}}
+2026-04-14 21:15:56,276 | INFO | jarvis | Executing tool: open_url with args={'url': 'openai.com'}
+2026-04-14 21:15:56,299 | INFO | jarvis | Tool result: Открываю сайт: https://openai.com
+2026-04-14 21:15:56,299 | INFO | jarvis | Assistant response: Открываю сайт: https://openai.com

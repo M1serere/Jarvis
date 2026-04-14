@@ -13,7 +13,7 @@ class UserMessage(BaseModel):
 
 class AssistantDecision(BaseModel):
     decision_type: Literal["respond", "tool_call"] = "respond"
-    response_text: str
+    response_text: str = ""
     tool_name: str | None = None
     tool_args: dict[str, Any] = Field(default_factory=dict)
 

@@ -43,12 +43,7 @@ class JarvisOrchestrator:
             )
 
         if decision.decision_type == "tool_call":
-            if not decision.tool_name or not self.tools.has_tool(decision.tool_name):
-                response_text = "Инструмент пока недоступен."
-                self.logger.warning("Tool not found: %s", decision.tool_name)
-            else:
-                result = self.tools.execute(decision.tool_name, decision.tool_args)
-                response_text = result
+            response_text = self._handle_tool_call(decision.tool_name, decision.tool_args)
         else:
             response_text = decision.response_text
 
@@ -60,3 +55,21 @@ class JarvisOrchestrator:
             raw_decision=decision,
             approved=True,
         )
+
+    def _handle_tool_call(self, tool_name: str | None, tool_args: dict) -> str:
+        if not tool_name:
+            self.logger.warning("Tool call decision without tool name.")
+            return "Инструмент не указан."
+
+        if not self.tools.has_tool(tool_name):
+            self.logger.warning("Tool not found: %s", tool_name)
+            return f"Инструмент '{tool_name}' пока недоступен."
+
+        try:
+            self.logger.info("Executing tool: %s with args=%s", tool_name, tool_args)
+            result = self.tools.execute(tool_name, tool_args)
+            self.logger.info("Tool result: %s", result)
+            return result
+        except Exception as exc:
+            self.logger.exception("Tool execution failed: %s", tool_name)
+            return f"Во время выполнения инструмента '{tool_name}' произошла ошибка: {exc}"

@@ -1,1 +1,2 @@
-# No third-party runtime dependencies at the moment.
+pydantic>=2.7.0
+requests>=2.32.0

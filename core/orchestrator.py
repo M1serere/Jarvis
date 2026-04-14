@@ -7,8 +7,13 @@ from memory.session_memory import SessionMemory
 from safety.guard import SafetyGuard
 from tools.registry import ToolRegistry
 
+from core.models import OrchestratorResponse, UserMessage, empty_decision
+
 
 class JarvisOrchestrator:
+    CONFIRM_WORDS = {"да", "ага", "подтверждаю", "yes", "y"}
+    CANCEL_WORDS = {"нет", "отмена", "отменить", "no", "n"}
+
     def __init__(self) -> None:
         self.logger = setup_logger()
         self.brain = Brain()
@@ -24,6 +29,13 @@ class JarvisOrchestrator:
         user_message = UserMessage(text=text)
         self.memory.add_user_message(text)
 
+        pending_action = self.memory.get_pending_action()
+        if pending_action is not None:
+            response = self._handle_confirmation_reply(user_message.text)
+            self.memory.add_assistant_message(response.response_text)
+            self.logger.debug("Assistant response: %s", response.response_text)
+            return response
+
         context = self.memory.get_recent(limit=10)
 
         decision = self.brain.decide(
@@ -35,6 +47,14 @@ class JarvisOrchestrator:
         approved = self.safety.approve(decision)
         if not approved:
             response_text = self.safety.get_block_message(decision)
+
+            if decision.requires_confirmation and decision.tool_name:
+                self.memory.set_pending_action(
+                    tool_name=decision.tool_name,
+                    tool_args=decision.tool_args,
+                    confirmation_message=response_text,
+                )
+
             self.memory.add_assistant_message(response_text)
             self.logger.warning("Decision blocked by safety guard.")
 
@@ -56,6 +76,57 @@ class JarvisOrchestrator:
             response_text=response_text,
             raw_decision=decision,
             approved=True,
+        )
+
+    def _handle_confirmation_reply(self, text: str) -> OrchestratorResponse:
+        normalized = text.strip().lower()
+        pending_action = self.memory.get_pending_action()
+
+        if pending_action is None:
+            return OrchestratorResponse(
+                response_text="Нет действия, ожидающего подтверждения.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        if normalized in self.CONFIRM_WORDS:
+            self.logger.info(
+                "Confirmation accepted for tool: %s with args=%s",
+                pending_action.tool_name,
+                pending_action.tool_args,
+            )
+            result = self._handle_tool_call(
+                pending_action.tool_name,
+                pending_action.tool_args,
+            )
+            self.memory.clear_pending_action()
+
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if normalized in self.CANCEL_WORDS:
+            self.logger.info(
+                "Confirmation declined for tool: %s",
+                pending_action.tool_name,
+            )
+            self.memory.clear_pending_action()
+
+            return OrchestratorResponse(
+                response_text="Действие отменено.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        return OrchestratorResponse(
+            response_text=(
+                "Я жду подтверждение текущего действия. "
+                "Ответь 'да' или 'нет'."
+            ),
+            raw_decision=empty_decision(),
+            approved=False,
         )
 
     def _handle_tool_call(self, tool_name: str | None, tool_args: dict) -> str:

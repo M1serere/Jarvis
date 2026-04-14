@@ -79,7 +79,7 @@ class MockBrainAdapter(BaseBrainAdapter):
                 decision_type="tool_call",
                 tool_name="create_file",
                 tool_args=create_with_text,
-                requires_confirmation=False,
+                requires_confirmation=True,
             )
 
         rewrite_file = self._extract_rewrite_file(user_text)
@@ -88,7 +88,7 @@ class MockBrainAdapter(BaseBrainAdapter):
                 decision_type="tool_call",
                 tool_name="edit_file",
                 tool_args=rewrite_file,
-                requires_confirmation=False,
+                requires_confirmation=True,
             )
 
         append_file = self._extract_append_file(user_text)
@@ -97,7 +97,7 @@ class MockBrainAdapter(BaseBrainAdapter):
                 decision_type="tool_call",
                 tool_name="edit_file",
                 tool_args=append_file,
-                requires_confirmation=False,
+                requires_confirmation=True,
             )
 
         replace_file_text = self._extract_replace_file_text(user_text)
@@ -106,7 +106,7 @@ class MockBrainAdapter(BaseBrainAdapter):
                 decision_type="tool_call",
                 tool_name="edit_file",
                 tool_args=replace_file_text,
-                requires_confirmation=False,
+                requires_confirmation=True,
             )
 
         create_filename = self._extract_create_file_name(user_text)
@@ -115,7 +115,7 @@ class MockBrainAdapter(BaseBrainAdapter):
                 decision_type="tool_call",
                 tool_name="create_file",
                 tool_args={"filename": create_filename, "content": ""},
-                requires_confirmation=False,
+                requires_confirmation=True,
             )
 
         open_filename = self._extract_open_file_name(user_text)

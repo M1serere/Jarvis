@@ -26,8 +26,9 @@ class SafetyGuard:
     def get_block_message(self, decision: AssistantDecision) -> str:
         if decision.requires_confirmation and decision.tool_name:
             return (
-                f"Действие '{decision.tool_name}' требует подтверждения. "
-                f"Позже мы добавим полноценный механизм подтверждения."
+                f"Подтвердить действие '{decision.tool_name}' "
+                f"с аргументами {decision.tool_args}? "
+                f"Ответь 'да' или 'нет'."
             )
 
         if (

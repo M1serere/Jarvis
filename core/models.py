@@ -21,7 +21,7 @@ class AssistantDecision:
     requires_confirmation: bool = False
 
     def model_dump_json(self) -> str:
-        return json.dumps(asdict(self), ensure_ascii=False, default=str)
+        return json.dumps(asdict(self), default=str, ensure_ascii=False)
 
 
 @dataclass(slots=True)
@@ -29,3 +29,13 @@ class OrchestratorResponse:
     response_text: str
     raw_decision: AssistantDecision
     approved: bool = True
+
+
+def empty_decision() -> AssistantDecision:
+    return AssistantDecision(
+        decision_type="respond",
+        response_text="",
+        tool_name=None,
+        tool_args={},
+        requires_confirmation=False,
+    )

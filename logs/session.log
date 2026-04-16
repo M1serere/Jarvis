@@ -202,3 +202,25 @@
 2026-04-16 13:10:54,434 | INFO | jarvis | Received user input: какая сегодня погода
 2026-04-16 13:11:06,815 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Погода сегодня в вашем городе: ... (данные отсутствуют)", "tool_name": "get_weather", "tool_args": {}, "requires_confirmation": false}
 2026-04-16 13:11:06,816 | DEBUG | jarvis | Assistant response: Погода сегодня в вашем городе: ... (данные отсутствуют)
+2026-04-16 13:13:45,542 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}]
+2026-04-16 13:13:53,241 | INFO | jarvis | Received user input: Привет
+2026-04-16 13:14:02,847 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Привет! Как я могу помочь вам сегодня?", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-16 13:14:02,848 | DEBUG | jarvis | Assistant response: Привет! Как я могу помочь вам сегодня?
+2026-04-16 13:14:21,716 | INFO | jarvis | Received user input: погода во Влади
+2026-04-16 13:14:30,291 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "browser_search", "tool_args": {"query": "погода во Влади"}, "requires_confirmation": false}
+2026-04-16 13:14:30,291 | INFO | jarvis | Executing tool: browser_search with args={'query': 'погода во Влади'}
+2026-04-16 13:14:30,354 | INFO | jarvis | Tool result: Ищу в Google: погода во Влади
+2026-04-16 13:14:30,355 | DEBUG | jarvis | Assistant response: Ищу в Google: погода во Влади
+2026-04-16 15:33:53,451 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}]
+2026-04-16 15:34:13,215 | INFO | jarvis | Received user input: как меня зовут?
+2026-04-16 15:34:23,731 | INFO | jarvis | Received user input: привет
+2026-04-16 15:34:39,326 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "привет!", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-16 15:34:39,326 | DEBUG | jarvis | Assistant response: привет!
+2026-04-16 15:35:04,481 | INFO | jarvis | Received user input: меня зовут Госпожа
+2026-04-16 15:35:11,507 | INFO | jarvis | Received user input: как меня зовут?
+2026-04-16 16:14:44,384 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}]
+2026-04-16 16:14:52,671 | INFO | jarvis | Received user input: привет
+2026-04-16 16:15:08,804 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Привет! Как я могу помочь вам сегодня?", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-16 16:15:08,805 | DEBUG | jarvis | Assistant response: Привет! Как я могу помочь вам сегодня?
+2026-04-16 16:15:22,713 | INFO | jarvis | Received user input: меня зовут Госпожа
+2026-04-16 16:15:29,561 | INFO | jarvis | Received user input: как меня зовут?

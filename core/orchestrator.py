@@ -10,6 +10,12 @@ from tools.registry import ToolRegistry
 from core.models import OrchestratorResponse, UserMessage, empty_decision
 
 
+from memory.persistent_memory import PersistentMemory
+from memory.user_profile import UserProfile
+from memory.references import ReferenceResolver
+from core.config import BASE_DIR
+
+
 class JarvisOrchestrator:
     CONFIRM_WORDS = {"да", "ага", "подтверждаю", "yes", "y"}
     CANCEL_WORDS = {"нет", "отмена", "отменить", "no", "n"}
@@ -22,6 +28,11 @@ class JarvisOrchestrator:
         self.safety = SafetyGuard(tool_registry=self.tools)
 
         self.logger.debug("Available tools: %s", self.tools.list_tools())
+
+        self.persistent = PersistentMemory(BASE_DIR / "memory.json")
+        self.profile = UserProfile(self.persistent)
+        self.references = ReferenceResolver()
+
 
     def handle_user_input(self, text: str) -> OrchestratorResponse:
         self.logger.info("Received user input: %s", text)
@@ -37,6 +48,24 @@ class JarvisOrchestrator:
             return response
 
         context = self.memory.get_recent(limit=10)
+
+        if "меня зовут" in text.lower():
+            name = text.split("меня зовут")[-1].strip()
+            self.profile.set_name(name)
+            return OrchestratorResponse(
+                response_text=f"Запомнил, тебя зовут {name}.",
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if "как меня зовут" in text.lower():
+            name = self.profile.get_name()
+            if name:
+                return OrchestratorResponse(
+                    response_text=f"Тебя зовут {name}.",
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
 
         decision = self.brain.decide(
         user_text=user_message.text,
@@ -131,6 +160,9 @@ class JarvisOrchestrator:
         )
 
     def _handle_tool_call(self, tool_name: str | None, tool_args: dict) -> str:
+        
+        tool_args = self.references.resolve(tool_args)
+
         if not tool_name:
             self.logger.warning("Tool call decision without tool name.")
             return "Инструмент не указан."
@@ -138,7 +170,11 @@ class JarvisOrchestrator:
         if not self.tools.has_tool(tool_name):
             self.logger.warning("Tool not found: %s", tool_name)
             return f"Инструмент '{tool_name}' пока недоступен."
-
+        
+        if "filename" in tool_args:
+            self.references.remember_file(tool_args["filename"])
+            self.memory.set_last_file(tool_args["filename"])
+        
         try:
             self.logger.info("Executing tool: %s with args=%s", tool_name, tool_args)
             result = self.tools.execute(tool_name, tool_args)

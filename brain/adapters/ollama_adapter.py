@@ -70,9 +70,18 @@ class OllamaBrainAdapter(BaseBrainAdapter):
             )
 
         try:
-            parsed = json.loads(raw_response)
+            try:
+                parsed = json.loads(raw_response)
+            except json.JSONDecodeError:
+            # fallback: вытащить JSON из текста
+                import re
+                match = re.search(r"\{.*\}", raw_response, re.DOTALL)
+                if match:
+                    parsed = json.loads(match.group(0))
+                else:
+                    raise
             return AssistantDecision.model_validate(parsed)
-        except (json.JSONDecodeError, ValidationError, TypeError, ValueError):
+        except (json.JSONDecodeError, ValidationError):
             return AssistantDecision(
                 decision_type="respond",
                 response_text=(
@@ -88,6 +97,12 @@ class OllamaBrainAdapter(BaseBrainAdapter):
         available_tools: list[dict[str, str]],
     ) -> str:
         recent_context = conversation_context[-8:]
+
+        user_name = ""
+        if hasattr(self, "user_profile") and self.user_profile:
+            name = self.user_profile.get_name()
+            if name:
+                user_name = f"User name: {name}"
 
         context_lines: list[str] = []
         for item in recent_context:
@@ -106,6 +121,7 @@ class OllamaBrainAdapter(BaseBrainAdapter):
 
         tools_block = "\n".join(tools_lines) if tools_lines else "- no tools available"
         context_block = "\n".join(context_lines) if context_lines else "no prior context"
+
 
         return f"""
 You are the routing brain for a personal assistant called Jarvis.

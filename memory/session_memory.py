@@ -15,6 +15,7 @@ class PendingAction:
 class SessionMemory:
     history: list[dict[str, str]] = field(default_factory=list)
     pending_action: PendingAction | None = None
+    last_file: str | None = None
 
     def add_user_message(self, text: str) -> None:
         self.history.append({"role": "user", "text": text})
@@ -42,3 +43,9 @@ class SessionMemory:
 
     def clear_pending_action(self) -> None:
         self.pending_action = None
+
+    def set_last_file(self, filename: str) -> None:
+        self.last_file = filename
+
+    def get_last_file(self) -> str | None:
+        return self.last_file

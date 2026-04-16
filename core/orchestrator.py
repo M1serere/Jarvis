@@ -39,8 +39,9 @@ class JarvisOrchestrator:
         context = self.memory.get_recent(limit=10)
 
         decision = self.brain.decide(
-            user_text=user_message.text,
-            conversation_context=context,
+        user_text=user_message.text,
+        conversation_context=context,
+        available_tools=self.tools.list_tools(),
         )
         self.logger.info("Brain decision: %s", decision.model_dump_json())
 

@@ -46,6 +46,7 @@ class MockBrainAdapter(BaseBrainAdapter):
         user_text: str,
         conversation_context: list[dict[str, str]],
         system_prompt: str,
+        available_tools: list[dict[str, str]] | None = None,
     ) -> AssistantDecision:
         text = user_text.lower().strip()
 
@@ -59,8 +60,7 @@ class MockBrainAdapter(BaseBrainAdapter):
             return AssistantDecision(
                 decision_type="respond",
                 response_text=(
-                    "Работаю стабильно. Теперь я умею открывать сайты, искать в Google, "
-                    "работать с файлами, получать погоду и новости программирования."
+                    "Работаю стабильно. Сейчас это mock-режим."
                 ),
             )
 
@@ -165,10 +165,7 @@ class MockBrainAdapter(BaseBrainAdapter):
 
         return AssistantDecision(
             decision_type="respond",
-            response_text=(
-                f"Я получил сообщение: '{user_text}'. "
-                f"Сейчас я работаю через MockBrainAdapter и умею вызывать несколько инструментов."
-            ),
+            response_text=f"Я получил сообщение: '{user_text}'.",
         )
 
     def _is_weather_request(self, text: str) -> bool:

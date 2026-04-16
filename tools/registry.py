@@ -11,6 +11,7 @@ from tools.implementations.get_weather import GetWeatherTool
 from tools.implementations.open_file import OpenFileTool
 from tools.implementations.open_url import OpenUrlTool
 
+from tools.implementations.music_control import MusicControlTool
 
 class ToolRegistry:
     def __init__(self) -> None:
@@ -25,6 +26,7 @@ class ToolRegistry:
         self.register(EditFileTool())
         self.register(GetWeatherTool())
         self.register(GetProgrammingNewsTool())
+        self.register(MusicControlTool())
 
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool

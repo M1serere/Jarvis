@@ -12,9 +12,16 @@ class PendingAction:
 
 
 @dataclass
+class PendingQuestion:
+    question_type: str
+    payload: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
 class SessionMemory:
     history: list[dict[str, str]] = field(default_factory=list)
     pending_action: PendingAction | None = None
+    pending_question: PendingQuestion | None = None
     last_file: str | None = None
 
     def add_user_message(self, text: str) -> None:
@@ -43,6 +50,22 @@ class SessionMemory:
 
     def clear_pending_action(self) -> None:
         self.pending_action = None
+
+    def set_pending_question(
+        self,
+        question_type: str,
+        payload: dict[str, Any] | None = None,
+    ) -> None:
+        self.pending_question = PendingQuestion(
+            question_type=question_type,
+            payload=payload or {},
+        )
+
+    def get_pending_question(self) -> PendingQuestion | None:
+        return self.pending_question
+
+    def clear_pending_question(self) -> None:
+        self.pending_question = None
 
     def set_last_file(self, filename: str) -> None:
         self.last_file = filename

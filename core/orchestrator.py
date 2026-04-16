@@ -1,4 +1,5 @@
 from __future__ import annotations
+from urllib import response
 
 from brain.brain import Brain
 from core.logger import setup_logger
@@ -15,6 +16,8 @@ from memory.references import ReferenceResolver
 from core.config import BASE_DIR
 
 from memory.facts_memory import FactsMemory
+
+from core.models import OrchestratorResponse, UserMessage, empty_decision
 
 class JarvisOrchestrator:
     CONFIRM_WORDS = {"да", "ага", "подтверждаю", "yes", "y"}
@@ -44,6 +47,13 @@ class JarvisOrchestrator:
         pending_action = self.memory.get_pending_action()
         if pending_action is not None:
             response = self._handle_confirmation_reply(user_message.text)
+            self.memory.add_assistant_message(response.response_text)
+            self.logger.debug("Assistant response: %s", response.response_text)
+            return response
+
+        pending_question = self.memory.get_pending_question()
+        if pending_question is not None:
+            response = self._handle_pending_question_reply(user_message.text)
             self.memory.add_assistant_message(response.response_text)
             self.logger.debug("Assistant response: %s", response.response_text)
             return response
@@ -126,6 +136,12 @@ class JarvisOrchestrator:
                 approved=True,
             )
         
+        music_response = self._handle_explicit_music_request(text)
+        if music_response is not None:
+            self.memory.add_assistant_message(music_response.response_text)
+            self.logger.debug("Assistant response: %s", music_response.response_text)
+            return music_response
+
         decision = self.brain.decide(
         user_text=user_message.text,
         conversation_context=context,
@@ -242,3 +258,130 @@ class JarvisOrchestrator:
         except Exception as exc:
             self.logger.exception("Tool execution failed: %s", tool_name)
             return f"Во время выполнения инструмента '{tool_name}' произошла ошибка: {exc}"
+        
+    MUSIC_YOUTUBE_WORDS = {"ютуб", "youtube", "на ютубе", "в ютубе"}
+    MUSIC_YANDEX_WORDS = {
+        "яндекс",
+        "яндекс музыка",
+        "yandex",
+        "yandex music",
+        "в яндекс музыке",
+        "на яндекс музыке",
+    }
+
+    def _handle_explicit_music_request(self, text: str) -> OrchestratorResponse | None:
+        lowered = text.strip().lower()
+
+        play_music_triggers = [
+            "включи музыку",
+            "запусти музыку",
+            "поставь музыку",
+        ]
+        stop_music_triggers = [
+            "выключи музыку",
+            "останови музыку",
+            "поставь на паузу музыку",
+            "пауза",
+            "поставь на паузу",
+        ]
+
+        if any(trigger in lowered for trigger in stop_music_triggers):
+            result = self._handle_tool_call(
+                "music_control",
+                {"action": "pause", "source": ""},
+            )
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if any(trigger in lowered for trigger in play_music_triggers):
+            if self._is_youtube_source(lowered):
+                result = self._handle_tool_call(
+                    "music_control",
+                    {"action": "play", "source": "youtube"},
+                )
+                return OrchestratorResponse(
+                    response_text=result,
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
+
+            if self._is_yandex_source(lowered):
+                result = self._handle_tool_call(
+                    "music_control",
+                    {"action": "play", "source": "yandex_music"},
+                )
+                return OrchestratorResponse(
+                    response_text=result,
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
+
+            self.memory.set_pending_question("music_source", {"action": "play"})
+            return OrchestratorResponse(
+                response_text="Где включить музыку: на YouTube или в Яндекс Музыке?",
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        return None
+
+
+    def _handle_pending_question_reply(self, text: str) -> OrchestratorResponse:
+        pending_question = self.memory.get_pending_question()
+        normalized = text.strip().lower()
+
+        if pending_question is None:
+            return OrchestratorResponse(
+                response_text="У меня нет активного уточняющего вопроса.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        if pending_question.question_type == "music_source":
+            if self._is_youtube_source(normalized):
+                self.memory.clear_pending_question()
+                result = self._handle_tool_call(
+                    "music_control",
+                    {"action": "play", "source": "youtube"},
+                )
+                return OrchestratorResponse(
+                    response_text=result,
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
+
+            if self._is_yandex_source(normalized):
+                self.memory.clear_pending_question()
+                result = self._handle_tool_call(
+                    "music_control",
+                    {"action": "play", "source": "yandex_music"},
+                )
+                return OrchestratorResponse(
+                    response_text=result,
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
+
+            return OrchestratorResponse(
+                response_text="Я жду ответ: YouTube или Яндекс Музыка.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        self.memory.clear_pending_question()
+        return OrchestratorResponse(
+            response_text="Неизвестный тип уточняющего вопроса.",
+            raw_decision=empty_decision(),
+            approved=False,
+        )
+
+
+    def _is_youtube_source(self, text: str) -> bool:
+        return any(word in text for word in self.MUSIC_YOUTUBE_WORDS)
+
+
+    def _is_yandex_source(self, text: str) -> bool:
+        return any(word in text for word in self.MUSIC_YANDEX_WORDS)

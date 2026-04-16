@@ -243,3 +243,24 @@
 2026-04-16 16:46:29,884 | INFO | jarvis | Received user input: что ты обо мне помнишь?
 2026-04-16 16:46:42,067 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Я помню, что вы любите читать. Если у вас возникнут вопросы, задайте их, и я помогу!", "tool_name": "", "tool_args": {}, "requires_confirmation": false}
 2026-04-16 16:46:42,068 | DEBUG | jarvis | Assistant response: Я помню, что вы любите читать. Если у вас возникнут вопросы, задайте их, и я помогу!
+2026-04-16 17:39:09,874 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: запускает YouTube, открывает Яндекс Музыку или переключает воспроизведение.', 'risk_level': 'safe'}]
+2026-04-16 17:39:16,218 | INFO | jarvis | Received user input: привет
+2026-04-16 17:39:32,064 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Привет! Как я могу вам помочь?", "tool_name": null, "tool_args": {}, "requires_confirmation": false}
+2026-04-16 17:39:32,065 | DEBUG | jarvis | Assistant response: Привет! Как я могу вам помочь?
+2026-04-16 17:39:56,197 | INFO | jarvis | Received user input: включи музыку в яндекс музыке
+2026-04-16 17:39:56,197 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'yandex_music'}
+2026-04-16 17:39:58,457 | INFO | jarvis | Tool result: Открываю Яндекс Музыку и пытаюсь запустить Мою волну.
+2026-04-16 17:39:58,458 | DEBUG | jarvis | Assistant response: Открываю Яндекс Музыку и пытаюсь запустить Мою волну.
+2026-04-16 17:43:06,481 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: запускает YouTube, открывает Яндекс Музыку или переключает воспроизведение.', 'risk_level': 'safe'}]
+2026-04-16 17:43:15,108 | INFO | jarvis | Received user input: включи яндекс музыку
+2026-04-16 17:43:21,399 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "music_control", "tool_args": {"action": "play_youtube"}, "requires_confirmation": true}
+2026-04-16 17:43:21,400 | WARNING | jarvis | Decision blocked by safety guard.
+2026-04-16 17:43:36,782 | INFO | jarvis | Received user input: да
+2026-04-16 17:43:36,782 | INFO | jarvis | Confirmation accepted for tool: music_control with args={'action': 'play_youtube'}
+2026-04-16 17:43:36,782 | INFO | jarvis | Executing tool: music_control with args={'action': 'play_youtube'}
+2026-04-16 17:43:36,782 | INFO | jarvis | Tool result: Не удалось выполнить команду музыки: неизвестное действие.
+2026-04-16 17:43:36,782 | DEBUG | jarvis | Assistant response: Не удалось выполнить команду музыки: неизвестное действие.
+2026-04-16 17:43:53,734 | INFO | jarvis | Received user input: включи музыку в яндекс музыке
+2026-04-16 17:43:53,735 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'yandex_music'}
+2026-04-16 17:43:55,821 | INFO | jarvis | Tool result: Открываю Яндекс Музыку и пытаюсь запустить Мою волну.
+2026-04-16 17:43:55,821 | DEBUG | jarvis | Assistant response: Открываю Яндекс Музыку и пытаюсь запустить Мою волну.

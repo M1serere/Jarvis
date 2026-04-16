@@ -224,3 +224,22 @@
 2026-04-16 16:15:08,805 | DEBUG | jarvis | Assistant response: Привет! Как я могу помочь вам сегодня?
 2026-04-16 16:15:22,713 | INFO | jarvis | Received user input: меня зовут Госпожа
 2026-04-16 16:15:29,561 | INFO | jarvis | Received user input: как меня зовут?
+2026-04-16 16:37:54,511 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}]
+2026-04-16 16:37:59,059 | INFO | jarvis | Received user input: привет
+2026-04-16 16:38:18,339 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Привет! Как я могу помочь вам сегодня?", "tool_name": "exact_tool_name", "tool_args": {}, "requires_confirmation": false}
+2026-04-16 16:38:18,340 | DEBUG | jarvis | Assistant response: Привет! Как я могу помочь вам сегодня?
+2026-04-16 16:38:51,656 | INFO | jarvis | Received user input: как меня зовут?
+2026-04-16 16:39:01,588 | INFO | jarvis | Received user input: меня зовут Госпожа
+2026-04-16 16:39:11,201 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Привет, Госпожа! Как я могу помочь вам сегодня?", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-16 16:39:11,202 | DEBUG | jarvis | Assistant response: Привет, Госпожа! Как я могу помочь вам сегодня?
+2026-04-16 16:39:18,442 | INFO | jarvis | Received user input: как меня зовут?
+2026-04-16 16:39:55,451 | INFO | jarvis | Received user input: зови меня Госпожа
+2026-04-16 16:40:01,323 | INFO | jarvis | Received user input: как меня зовут?
+2026-04-16 16:45:20,330 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}]
+2026-04-16 16:45:30,165 | INFO | jarvis | Received user input: как меня зовут?
+2026-04-16 16:45:50,161 | INFO | jarvis | Received user input: джарвис, запомни, что я люблю читать
+2026-04-16 16:46:02,659 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Хорошо, я помню, что вы любите читать. Если у вас возникнут вопросы, задайте их, и я помогу!", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-16 16:46:02,660 | DEBUG | jarvis | Assistant response: Хорошо, я помню, что вы любите читать. Если у вас возникнут вопросы, задайте их, и я помогу!
+2026-04-16 16:46:29,884 | INFO | jarvis | Received user input: что ты обо мне помнишь?
+2026-04-16 16:46:42,067 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Я помню, что вы любите читать. Если у вас возникнут вопросы, задайте их, и я помогу!", "tool_name": "", "tool_args": {}, "requires_confirmation": false}
+2026-04-16 16:46:42,068 | DEBUG | jarvis | Assistant response: Я помню, что вы любите читать. Если у вас возникнут вопросы, задайте их, и я помогу!

@@ -9,12 +9,12 @@ from tools.registry import ToolRegistry
 
 from core.models import OrchestratorResponse, UserMessage, empty_decision
 
-
 from memory.persistent_memory import PersistentMemory
 from memory.user_profile import UserProfile
 from memory.references import ReferenceResolver
 from core.config import BASE_DIR
 
+from memory.facts_memory import FactsMemory
 
 class JarvisOrchestrator:
     CONFIRM_WORDS = {"да", "ага", "подтверждаю", "yes", "y"}
@@ -33,6 +33,7 @@ class JarvisOrchestrator:
         self.profile = UserProfile(self.persistent)
         self.references = ReferenceResolver()
 
+        self.facts_memory = FactsMemory(self.persistent)
 
     def handle_user_input(self, text: str) -> OrchestratorResponse:
         self.logger.info("Received user input: %s", text)
@@ -49,24 +50,82 @@ class JarvisOrchestrator:
 
         context = self.memory.get_recent(limit=10)
 
-        if "меня зовут" in text.lower():
-            name = text.split("меня зовут")[-1].strip()
-            self.profile.set_name(name)
-            return OrchestratorResponse(
-                response_text=f"Запомнил, тебя зовут {name}.",
-                raw_decision=empty_decision(),
-                approved=True,
-            )
+        normalized_text = text.strip()
+        lowered_text = normalized_text.lower()
 
-        if "как меня зовут" in text.lower():
-            name = self.profile.get_name()
+        if lowered_text.startswith("зови меня "):
+            name = normalized_text[len("зови меня "):].strip(" .!?")
             if name:
+                self.profile.set_name(name)
                 return OrchestratorResponse(
-                    response_text=f"Тебя зовут {name}.",
+                    response_text=f"Хорошо. Теперь я буду обращаться к тебе: {name}.",
                     raw_decision=empty_decision(),
                     approved=True,
                 )
 
+        if lowered_text.startswith("моё имя "):
+            name = normalized_text[len("моё имя "):].strip(" .!?")
+            if name:
+                self.profile.set_name(name)
+                return OrchestratorResponse(
+                    response_text=f"Запомнил. Твоё имя: {name}.",
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
+
+        if lowered_text in {
+            "как меня зовут",
+            "как меня зовут?",
+            "кто я",
+            "кто я?",
+        }:
+            name = self.profile.get_name()
+            return OrchestratorResponse(
+                response_text=f"Я обращаюсь к тебе как: {name}.",
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if lowered_text.startswith("джарвис, запомни "):
+            # fact = normalized_text[len("Джарвис, запомни "):].strip(" .!?")
+            fact = normalized_text[len("Джарвис, запомни "):].strip(" .!?")
+            if not fact:
+                fact = normalized_text[len("джарвис, запомни "):].strip(" .!?")
+
+            if fact.lower().startswith("что "):
+                fact = fact[5:].strip()
+
+            if not fact:
+                fact = normalized_text[len("джарвис, запомни "):].strip(" .!?")
+
+            if fact:
+                self.facts_memory.add_fact(fact)
+                return OrchestratorResponse(
+                    response_text=f"Запомнил: {fact}.",
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
+
+        if lowered_text in {
+            "джарвис, что ты обо мне помнишь",
+            "что ты обо мне помнишь",
+            "что ты помнишь обо мне",
+        }:
+            facts = self.facts_memory.get_facts()
+            if not facts:
+                return OrchestratorResponse(
+                    response_text="Пока у меня нет сохранённых фактов о тебе.",
+                    raw_decision=empty_decision(),
+                    approved=True,
+                )
+
+            facts_text = "\n".join(f"{idx + 1}. {fact}" for idx, fact in enumerate(facts))
+            return OrchestratorResponse(
+                response_text=f"Вот что я помню о тебе:\n{facts_text}",
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+        
         decision = self.brain.decide(
         user_text=user_message.text,
         conversation_context=context,

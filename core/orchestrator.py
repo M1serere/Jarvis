@@ -23,8 +23,19 @@ class JarvisOrchestrator:
     CONFIRM_WORDS = {"да", "ага", "подтверждаю", "yes", "y"}
     CANCEL_WORDS = {"нет", "отмена", "отменить", "no", "n"}
 
-    def __init__(self) -> None:
+    MUSIC_YOUTUBE_WORDS = {"ютуб", "youtube", "на ютубе", "в ютубе"}
+    MUSIC_YANDEX_WORDS = {
+        "яндекс",
+        "яндекс музыка",
+        "yandex",
+        "yandex music",
+        "в яндекс музыке",
+        "на яндекс музыке",
+    }
+
+    def __init__(self, status_ui=None) -> None:
         self.logger = setup_logger()
+        self.status_ui = status_ui
         self.brain = Brain()
         self.memory = SessionMemory()
         self.tools = ToolRegistry()
@@ -38,11 +49,18 @@ class JarvisOrchestrator:
 
         self.facts_memory = FactsMemory(self.persistent)
 
+    def _set_status(self, status: str, detail: str = "") -> None:
+            if self.status_ui is not None:
+                self.status_ui.set_status(status, detail)
+
     def handle_user_input(self, text: str) -> OrchestratorResponse:
+        self._set_status("Думает", "Анализ команды")
         self.logger.info("Received user input: %s", text)
+        self.logger.info("User said: %s", text)
 
         user_message = UserMessage(text=text)
         self.memory.add_user_message(text)
+
 
         pending_action = self.memory.get_pending_action()
         if pending_action is not None:
@@ -143,11 +161,19 @@ class JarvisOrchestrator:
             return music_response
 
         decision = self.brain.decide(
-        user_text=user_message.text,
-        conversation_context=context,
-        available_tools=self.tools.list_tools(),
+            user_text=user_message.text,
+            conversation_context=context,
+            available_tools=self.tools.list_tools(),
         )
         self.logger.info("Brain decision: %s", decision.model_dump_json())
+        
+        self.logger.info("Assistant understood: %s", decision.model_dump_json())
+        if decision.decision_type == "tool_call":
+            self.logger.info(
+                "Assistant selected action: %s | args=%s",
+                decision.tool_name,
+                decision.tool_args,
+            )
 
         approved = self.safety.approve(decision)
         if not approved:
@@ -162,20 +188,26 @@ class JarvisOrchestrator:
 
             self.memory.add_assistant_message(response_text)
             self.logger.warning("Decision blocked by safety guard.")
-
+            self._set_status("Готов", "Ожидание подтверждения")
+            
             return OrchestratorResponse(
                 response_text=response_text,
                 raw_decision=decision,
                 approved=False,
             )
 
+
+        #self._set_status("Выполняет", f"Инструмент: {decision.tool_name}")
+
         if decision.decision_type == "tool_call":
+            self._set_status("Выполняет", f"Инструмент: {decision.tool_name}")
             response_text = self._handle_tool_call(decision.tool_name, decision.tool_args)
         else:
             response_text = decision.response_text
 
         self.memory.add_assistant_message(response_text)
         self.logger.debug("Assistant response: %s", response_text)
+        self._set_status("Готов", "Ожидание команды")
 
         return OrchestratorResponse(
             response_text=response_text,
@@ -200,11 +232,13 @@ class JarvisOrchestrator:
                 pending_action.tool_name,
                 pending_action.tool_args,
             )
+            self._set_status("Выполняет", f"Подтверждено: {pending_action.tool_name}")
             result = self._handle_tool_call(
                 pending_action.tool_name,
                 pending_action.tool_args,
             )
             self.memory.clear_pending_action()
+            self._set_status("Готов", "Ожидание команды")
 
             return OrchestratorResponse(
                 response_text=result,
@@ -218,13 +252,14 @@ class JarvisOrchestrator:
                 pending_action.tool_name,
             )
             self.memory.clear_pending_action()
+            self._set_status("Готов", "Действие отменено")
 
             return OrchestratorResponse(
                 response_text="Действие отменено.",
                 raw_decision=empty_decision(),
                 approved=False,
             )
-
+        self._set_status("Готов", "Ожидание подтверждения")
         return OrchestratorResponse(
             response_text=(
                 "Я жду подтверждение текущего действия. "
@@ -258,16 +293,7 @@ class JarvisOrchestrator:
         except Exception as exc:
             self.logger.exception("Tool execution failed: %s", tool_name)
             return f"Во время выполнения инструмента '{tool_name}' произошла ошибка: {exc}"
-        
-    MUSIC_YOUTUBE_WORDS = {"ютуб", "youtube", "на ютубе", "в ютубе"}
-    MUSIC_YANDEX_WORDS = {
-        "яндекс",
-        "яндекс музыка",
-        "yandex",
-        "yandex music",
-        "в яндекс музыке",
-        "на яндекс музыке",
-    }
+
 
     def _handle_explicit_music_request(self, text: str) -> OrchestratorResponse | None:
         lowered = text.strip().lower()
@@ -385,3 +411,5 @@ class JarvisOrchestrator:
 
     def _is_yandex_source(self, text: str) -> bool:
         return any(word in text for word in self.MUSIC_YANDEX_WORDS)
+    
+    

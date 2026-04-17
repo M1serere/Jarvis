@@ -62,3 +62,8 @@ YANDEX_MUSIC_LAUNCH_TARGET = os.getenv("YANDEX_MUSIC_LAUNCH_TARGET", "C:\\Users\
 
 # Необязательно, но удобно:
 YANDEX_MUSIC_WAVE_URL = os.getenv("YANDEX_MUSIC_WAVE_URL", "")
+
+LOG_RETENTION_DAYS = 180
+LOG_FILE_NAME = "jarvis.log"
+
+UI_WINDOW_TITLE = "Jarvis Status"

@@ -41,6 +41,11 @@ class MockBrainAdapter(BaseBrainAdapter):
         re.IGNORECASE,
     )
 
+    DELETE_FILE_PATTERN = re.compile(
+        r"удали файл\s+([^\s]+)",
+        re.IGNORECASE,
+    )
+
     def decide(
         self,
         user_text: str,
@@ -132,6 +137,21 @@ class MockBrainAdapter(BaseBrainAdapter):
                 tool_args={"filename": create_filename, "content": ""},
                 requires_confirmation=True,
             )
+
+        delete_filename = self._extract_delete_file_name(user_text)
+        if delete_filename:
+            return AssistantDecision(
+                decision_type="tool_call",
+                tool_name="delete_file",
+                tool_args={"filename": delete_filename},
+                requires_confirmation=True,
+            )
+
+        def _extract_delete_file_name(self, text: str) -> str | None:
+            match = self.DELETE_FILE_PATTERN.search(text)
+            if match:
+                return match.group(1).strip()
+            return None
 
         open_filename = self._extract_open_file_name(user_text)
         if open_filename:

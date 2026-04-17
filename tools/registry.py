@@ -13,6 +13,8 @@ from tools.implementations.open_url import OpenUrlTool
 
 from tools.implementations.music_control import MusicControlTool
 
+from tools.implementations.delete_file import DeleteFileTool
+
 class ToolRegistry:
     def __init__(self) -> None:
         self._tools: dict[str, BaseTool] = {}
@@ -27,6 +29,7 @@ class ToolRegistry:
         self.register(GetWeatherTool())
         self.register(GetProgrammingNewsTool())
         self.register(MusicControlTool())
+        self.register(DeleteFileTool())
 
     def register(self, tool: BaseTool) -> None:
         self._tools[tool.name] = tool

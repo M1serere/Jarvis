@@ -201,7 +201,16 @@ Includes:
 
 ---
 
-## 🎵 Week 6 — System Control
+## 🧠 Week 6 — Memory
+
+* Persistent user memory
+* Fact storage & retrieval
+
+**Result:** personalized assistant
+
+---
+
+## 🎵 Week 7 — System Control
 
 * Media control:
 
@@ -216,14 +225,6 @@ Includes:
 
 ---
 
-## 🧠 Week 7 — Memory
-
-* Persistent user memory
-* Fact storage & retrieval
-
-**Result:** personalized assistant
-
----
 
 ## 🔐 Week 8 — Safety & UX
 

@@ -33,3 +33,19 @@
 2026-04-19 13:29:52,278 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
 2026-04-19 13:29:52,352 | INFO | jarvis | Tool result: Запускаю музыку на YouTube.
 2026-04-19 13:29:52,353 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube.
+2026-04-19 14:38:13,806 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube или переключает воспроизведение.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 14:38:19,099 | INFO | jarvis | Received user input: привет
+2026-04-19 14:38:19,100 | INFO | jarvis | User said: привет
+2026-04-19 14:38:33,858 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Привет! Как я могу помочь?", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 14:38:33,858 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "Привет! Как я могу помочь?", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 14:38:33,859 | DEBUG | jarvis | Assistant response: Привет! Как я могу помочь?
+2026-04-19 14:38:42,766 | INFO | jarvis | Received user input: включи музыку
+2026-04-19 14:38:42,766 | INFO | jarvis | User said: включи музыку
+2026-04-19 14:38:42,766 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 14:38:44,848 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Музыка для учебы, работы, релаксации и концентрации ｜#4 (1:01:14).
+2026-04-19 14:38:44,849 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Музыка для учебы, работы, релаксации и концентрации ｜#4 (1:01:14).
+2026-04-19 14:39:10,154 | INFO | jarvis | Received user input: включи музыку
+2026-04-19 14:39:10,154 | INFO | jarvis | User said: включи музыку
+2026-04-19 14:39:10,155 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 14:39:12,330 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Рабочая музыка для максимальной продуктивности и концентрации | Плейлист Night Cyber City (2:58:31).
+2026-04-19 14:39:12,331 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Рабочая музыка для максимальной продуктивности и концентрации | Плейлист Night Cyber City (2:58:31).

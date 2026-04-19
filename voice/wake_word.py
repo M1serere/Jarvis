@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+import re
 
 import speech_recognition as sr
 
@@ -12,11 +13,16 @@ class WakeWordListener:
         language: str = "ru-RU",
         timeout: float = 1.5,
         phrase_time_limit: float = 2.5,
+        debug: bool = False,
     ) -> None:
-        self.keywords = [k.lower() for k in (keywords or ["джарвис", "jarvis"])]
+        self.keywords = [
+            self._normalize_text(k)
+            for k in (keywords or ["\u0434\u0436\u0430\u0440\u0432\u0438\u0441", "jarvis"])
+        ]
         self.language = language
         self.timeout = timeout
         self.phrase_time_limit = phrase_time_limit
+        self.debug = debug
         self.recognizer = sr.Recognizer()
 
     def listen(self, callback: Callable[[], None]) -> None:
@@ -40,10 +46,31 @@ class WakeWordListener:
                         audio,
                         language=self.language,
                     ).lower()
-                    print(f"Wake recognized: {text}")
+                    if self.debug:
+                        print(f"Wake recognized: {text}")
                 except (sr.UnknownValueError, sr.RequestError):
                     continue
 
-                if any(keyword in text for keyword in self.keywords):
+                if self._is_wake_phrase(text):
                     print("Wake word detected!")
                     callback()
+
+    @staticmethod
+    def _normalize_text(text: str) -> str:
+        normalized = re.sub(r"[^\w\s-]", " ", text.lower())
+        return " ".join(normalized.split())
+
+    def _is_wake_phrase(self, text: str) -> bool:
+        normalized_text = self._normalize_text(text)
+        if not normalized_text:
+            return False
+
+        allowed_prefixes = ("", "\u044d\u0439", "hey", "ok", "okay")
+
+        for keyword in self.keywords:
+            for prefix in allowed_prefixes:
+                allowed_phrase = f"{prefix} {keyword}".strip()
+                if normalized_text == allowed_phrase:
+                    return True
+
+        return False

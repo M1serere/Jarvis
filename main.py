@@ -6,7 +6,9 @@ from voice.wake_word import WakeWordListener
 
 def main() -> None:
     voice_controller = VoiceController()
-    wake_listener = WakeWordListener(keywords=["джарвис", "jarvis"])
+    wake_listener = WakeWordListener(
+        keywords=["\u0434\u0436\u0430\u0440\u0432\u0438\u0441", "jarvis"]
+    )
 
     print("Jarvis voice mode is running.")
     print("Say 'Jarvis' to activate the assistant.")
@@ -24,7 +26,6 @@ def main() -> None:
         voice_controller.ui.run()
     except KeyboardInterrupt:
         print("\nJarvis stopped.")
-
 
 
 if __name__ == "__main__":

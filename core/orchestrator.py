@@ -410,6 +410,64 @@ class JarvisOrchestrator:
 
         return None
 
+    def _handle_work_time_request(self, lowered_text: str) -> OrchestratorResponse | None:
+        work_time_triggers = {
+            "сколько я работаю",
+            "сколько я уже работаю",
+            "сколько времени я работаю",
+            "сколько времени я уже работаю",
+            "как долго я работаю",
+            "как долго я уже работаю",
+        }
+
+        cleaned_text = lowered_text.strip(" .!?")
+        if cleaned_text not in work_time_triggers:
+            return None
+
+        if self.work_time_provider is None:
+            return OrchestratorResponse(
+                response_text="Я пока не могу определить, сколько времени вы работаете.",
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        elapsed_seconds = max(0, int(self.work_time_provider()))
+        response_text = f"Вы работаете {self._format_work_duration(elapsed_seconds)}."
+        return OrchestratorResponse(
+            response_text=response_text,
+            raw_decision=empty_decision(),
+            approved=True,
+        )
+
+    def _format_work_duration(self, elapsed_seconds: int) -> str:
+        total_minutes = max(0, elapsed_seconds // 60)
+        hours, minutes = divmod(total_minutes, 60)
+
+        if hours == 0:
+            if minutes == 0:
+                return "меньше минуты"
+            return f"{minutes} {self._pluralize(minutes, 'минуту', 'минуты', 'минут')}"
+
+        if minutes == 0:
+            return f"{hours} {self._pluralize(hours, 'час', 'часа', 'часов')}"
+
+        return (
+            f"{hours} {self._pluralize(hours, 'час', 'часа', 'часов')} "
+            f"{minutes} {self._pluralize(minutes, 'минуту', 'минуты', 'минут')}"
+        )
+
+    def _pluralize(self, value: int, one: str, few: str, many: str) -> str:
+        last_two = value % 100
+        last_one = value % 10
+
+        if 11 <= last_two <= 14:
+            return many
+        if last_one == 1:
+            return one
+        if 2 <= last_one <= 4:
+            return few
+        return many
+
     def _handle_pending_question_reply(self, text: str) -> OrchestratorResponse:
         pending_question = self.memory.get_pending_question()
 
@@ -441,7 +499,3 @@ class JarvisOrchestrator:
 
     def _is_youtube_source(self, text: str) -> bool:
         return any(word in text for word in self.MUSIC_YOUTUBE_WORDS)
-    
-    def notify_break(self):
-        print("[TIMER] Пора сделать перерыв")
-        self.tts.speak("Ты работаешь уже довольно долго. Пора сделать небольшой перерыв.")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pydoc import text
 import threading
 
 from core.orchestrator import JarvisOrchestrator
@@ -19,6 +20,9 @@ class VoiceController:
     def run_once(self) -> None:
         self.ui.set_status("Слушает", "Жду голосовую команду")
         user_text = self.stt.listen()
+        
+        if user_text and self.ui:
+            self.ui.add_user_command(user_text)
 
         if not user_text or user_text.startswith("Ошибка STT:"):
             self.ui.set_status("Готов", "Не удалось распознать речь")

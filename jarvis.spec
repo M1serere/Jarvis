@@ -5,6 +5,7 @@ from PyInstaller.utils.hooks import collect_all
 
 project_dir = Path(SPECPATH)
 logo_icon = project_dir / "build_assets" / "jarvis.ico"
+version_info = project_dir / "build_assets" / "jarvis_version_info.txt"
 
 datas = []
 binaries = []
@@ -58,6 +59,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=str(logo_icon) if logo_icon.exists() else None,
+    version=str(version_info) if version_info.exists() else None,
 )
 
 coll = COLLECT(

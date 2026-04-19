@@ -12,6 +12,7 @@ SETTINGS_FILE = BASE_DIR / "settings.json"
 @dataclass(slots=True)
 class AppSettings:
     voice_volume: int = 80
+    autostart_enabled: bool = True
 
 
 class SettingsStore:
@@ -25,7 +26,8 @@ class SettingsStore:
 
             data = json.loads(self._path.read_text(encoding="utf-8"))
             return AppSettings(
-                voice_volume=self._clamp_volume(data.get("voice_volume", 80))
+                voice_volume=self._clamp_volume(data.get("voice_volume", 80)),
+                autostart_enabled=self._to_bool(data.get("autostart_enabled", True)),
             )
         except Exception:
             return AppSettings()
@@ -33,6 +35,9 @@ class SettingsStore:
     def save(self, settings: AppSettings) -> None:
         payload = asdict(settings)
         payload["voice_volume"] = self._clamp_volume(payload.get("voice_volume", 80))
+        payload["autostart_enabled"] = self._to_bool(
+            payload.get("autostart_enabled", True)
+        )
         self._path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",
@@ -44,3 +49,7 @@ class SettingsStore:
             return max(0, min(int(float(value)), 100))
         except Exception:
             return 80
+
+    @staticmethod
+    def _to_bool(value: object) -> bool:
+        return bool(value)

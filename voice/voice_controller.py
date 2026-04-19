@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 import threading
 
+from core import autostart
 from core.config import WORK_TIMER_SECONDS
 from core.orchestrator import JarvisOrchestrator
 from core.settings import AppSettings, SettingsStore
@@ -21,6 +22,8 @@ class VoiceController:
         self.ui = StatusWindow(
             voice_volume=self.settings.voice_volume,
             on_voice_volume_change=self.set_voice_volume,
+            autostart_enabled=self.settings.autostart_enabled,
+            on_autostart_change=self.set_autostart,
         )
         self.work_timer = WorkTimer(
             notify_callback=self.notify_break,
@@ -31,11 +34,50 @@ class VoiceController:
             work_time_provider=self.work_timer.get_elapsed_seconds,
         )
         self._activation_lock = threading.Lock()
+        self._sync_autostart()
 
     def set_voice_volume(self, volume: int) -> None:
         safe_volume = max(0, min(int(volume), 100))
-        self.settings = AppSettings(voice_volume=safe_volume)
+        self.settings = AppSettings(
+            voice_volume=safe_volume,
+            autostart_enabled=self.settings.autostart_enabled,
+        )
         self.tts.set_volume(safe_volume)
+        try:
+            self.settings_store.save(self.settings)
+        except Exception:
+            pass
+
+    def set_autostart(self, enabled: bool) -> None:
+        desired_state = bool(enabled)
+        success = autostart.set_enabled(desired_state) if autostart.is_supported() else False
+
+        self.settings = AppSettings(
+            voice_volume=self.settings.voice_volume,
+            autostart_enabled=desired_state if success else autostart.is_enabled(),
+        )
+        self.ui.set_autostart_value(self.settings.autostart_enabled)
+
+        try:
+            self.settings_store.save(self.settings)
+        except Exception:
+            pass
+
+    def _sync_autostart(self) -> None:
+        if autostart.is_supported():
+            actual_state = autostart.set_enabled(self.settings.autostart_enabled)
+            self.settings = AppSettings(
+                voice_volume=self.settings.voice_volume,
+                autostart_enabled=actual_state and self.settings.autostart_enabled,
+            )
+        else:
+            self.settings = AppSettings(
+                voice_volume=self.settings.voice_volume,
+                autostart_enabled=False,
+            )
+
+        self.ui.set_autostart_value(self.settings.autostart_enabled)
+
         try:
             self.settings_store.save(self.settings)
         except Exception:

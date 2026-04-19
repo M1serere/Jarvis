@@ -25,6 +25,8 @@ class StatusWindow:
         self,
         voice_volume: int = 80,
         on_voice_volume_change: Callable[[int], None] | None = None,
+        autostart_enabled: bool = False,
+        on_autostart_change: Callable[[bool], None] | None = None,
     ) -> None:
         self.root = tk.Tk()
         self.root.title(UI_WINDOW_TITLE)
@@ -61,7 +63,9 @@ class StatusWindow:
         self.clock_var = tk.StringVar(value="00:00:00")
         self.voice_volume_var = tk.IntVar(value=max(0, min(voice_volume, 100)))
         self.voice_volume_text_var = tk.StringVar()
+        self.autostart_var = tk.BooleanVar(value=autostart_enabled)
         self._on_voice_volume_change = on_voice_volume_change
+        self._on_autostart_change = on_autostart_change
         self._settings_menu_visible = False
 
         self.monitor = SystemMonitor()
@@ -353,6 +357,31 @@ class StatusWindow:
             fg=self.CYAN_SOFT,
             font=("Consolas", 10, "bold"),
         ).pack(anchor="w", pady=(6, 0))
+
+        tk.Label(
+            frame,
+            text="System startup",
+            bg=self.PANEL,
+            fg=self.TEXT,
+            font=("Segoe UI", 10, "bold"),
+        ).pack(anchor="w", pady=(14, 4))
+
+        self.autostart_check = tk.Checkbutton(
+            frame,
+            text="Launch Jarvis when Windows starts",
+            variable=self.autostart_var,
+            command=self._on_autostart_toggle,
+            bg=self.PANEL,
+            fg=self.TEXT,
+            selectcolor=self.PANEL_2,
+            activebackground=self.PANEL,
+            activeforeground=self.TEXT,
+            highlightthickness=0,
+            bd=0,
+            anchor="w",
+            font=("Segoe UI", 10),
+        )
+        self.autostart_check.pack(fill="x", anchor="w")
 
         return panel
 
@@ -833,6 +862,13 @@ class StatusWindow:
 
     def _update_volume_label(self, volume: int) -> None:
         self.voice_volume_text_var.set(f"OUTPUT LEVEL: {volume}%")
+
+    def _on_autostart_toggle(self) -> None:
+        if self._on_autostart_change is not None:
+            self._on_autostart_change(self.autostart_var.get())
+
+    def set_autostart_value(self, enabled: bool) -> None:
+        self.autostart_var.set(bool(enabled))
 
     def _cpu_label(self) -> str:
         value = self.stats_history["cpu"][-1] if self.stats_history["cpu"] else 0.0

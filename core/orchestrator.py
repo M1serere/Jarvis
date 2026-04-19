@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from brain.brain import Brain
 from core.config import BASE_DIR
 from core.logger import setup_logger
@@ -281,16 +283,88 @@ class JarvisOrchestrator:
             "включи музыку",
             "запусти музыку",
             "поставь музыку",
+            "продолжи музыку",
+            "воспроизведи музыку",
         ]
-        stop_music_triggers = [
+        pause_music_triggers = [
             "выключи музыку",
             "останови музыку",
             "поставь на паузу музыку",
             "пауза",
             "поставь на паузу",
+            "останови видео",
+            "пауза музыка",
+        ]
+        next_music_triggers = [
+            "следующее видео",
+            "включи следующее видео",
+            "следующий трек",
+            "следующая песня",
+            "дальше",
+            "переключи видео",
+            "переключи трек",
+        ]
+        volume_down_triggers = [
+            "сделай потише",
+            "потише",
+            "уменьши громкость",
+            "убавь громкость",
+            "громкость ниже",
+        ]
+        volume_up_triggers = [
+            "сделай погромче",
+            "погромче",
+            "увеличь громкость",
+            "добавь громкость",
+            "громкость выше",
         ]
 
-        if any(trigger in lowered for trigger in stop_music_triggers):
+        volume_value = self._extract_volume_value(lowered)
+        if volume_value is not None:
+            result = self._handle_tool_call(
+                "music_control",
+                {"action": "set_volume", "value": volume_value, "source": ""},
+            )
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if any(trigger in lowered for trigger in volume_down_triggers):
+            result = self._handle_tool_call(
+                "music_control",
+                {"action": "volume_down", "source": ""},
+            )
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if any(trigger in lowered for trigger in volume_up_triggers):
+            result = self._handle_tool_call(
+                "music_control",
+                {"action": "volume_up", "source": ""},
+            )
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if any(trigger in lowered for trigger in next_music_triggers):
+            result = self._handle_tool_call(
+                "music_control",
+                {"action": "next", "source": ""},
+            )
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if any(trigger in lowered for trigger in pause_music_triggers):
             result = self._handle_tool_call(
                 "music_control",
                 {"action": "pause", "source": ""},
@@ -311,6 +385,23 @@ class JarvisOrchestrator:
                 raw_decision=empty_decision(),
                 approved=True,
             )
+
+        return None
+
+    def _extract_volume_value(self, text: str) -> int | None:
+        patterns = [
+            r"громкость\s+(\d{1,3})",
+            r"поставь громкость\s+на\s+(\d{1,3})",
+            r"установи громкость\s+на\s+(\d{1,3})",
+            r"сделай громкость\s+(\d{1,3})",
+            r"volume\s+(\d{1,3})",
+        ]
+
+        for pattern in patterns:
+            match = re.search(pattern, text, re.IGNORECASE)
+            if match:
+                value = int(match.group(1))
+                return max(0, min(100, value))
 
         return None
 

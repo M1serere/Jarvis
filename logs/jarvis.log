@@ -49,3 +49,147 @@
 2026-04-19 14:39:10,155 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
 2026-04-19 14:39:12,330 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Рабочая музыка для максимальной продуктивности и концентрации | Плейлист Night Cyber City (2:58:31).
 2026-04-19 14:39:12,331 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Рабочая музыка для максимальной продуктивности и концентрации | Плейлист Night Cyber City (2:58:31).
+2026-04-19 15:15:24,044 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube, ставит на паузу, переключает треки и меняет громкость.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 15:15:37,894 | INFO | jarvis | Received user input: Привет
+2026-04-19 15:15:37,895 | INFO | jarvis | User said: Привет
+2026-04-19 15:15:53,160 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Привет! Как я могу помочь вам сегодня?", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 15:15:53,161 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "Привет! Как я могу помочь вам сегодня?", "tool_name": "none", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 15:15:53,161 | DEBUG | jarvis | Assistant response: Привет! Как я могу помочь вам сегодня?
+2026-04-19 15:16:10,972 | INFO | jarvis | Received user input: Включи музыку
+2026-04-19 15:16:10,972 | INFO | jarvis | User said: Включи музыку
+2026-04-19 15:16:10,973 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 15:16:13,475 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Музыка для работы - Deep Focus Mix для программирования, кодирования (1:29:35).
+2026-04-19 15:16:13,476 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Музыка для работы - Deep Focus Mix для программирования, кодирования (1:29:35).
+2026-04-19 15:16:28,008 | INFO | jarvis | Received user input: Сделай тише
+2026-04-19 15:16:28,008 | INFO | jarvis | User said: Сделай тише
+2026-04-19 15:16:37,256 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Тише.", "tool_name": "music_control", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 15:16:37,257 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "Тише.", "tool_name": "music_control", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 15:16:37,257 | DEBUG | jarvis | Assistant response: Тише.
+2026-04-19 15:16:56,759 | INFO | jarvis | Received user input: громкость 25
+2026-04-19 15:16:56,760 | INFO | jarvis | User said: громкость 25
+2026-04-19 15:16:56,760 | INFO | jarvis | Executing tool: music_control with args={'action': 'set_volume', 'value': 25, 'source': ''}
+2026-04-19 15:16:56,775 | INFO | jarvis | Tool result: Не удалось установить громкость на этом устройстве.
+2026-04-19 15:16:56,775 | DEBUG | jarvis | Assistant response: Не удалось установить громкость на этом устройстве.
+2026-04-19 15:17:31,480 | INFO | jarvis | Received user input: Сделай громкость ти
+2026-04-19 15:17:31,481 | INFO | jarvis | User said: Сделай громкость ти
+2026-04-19 15:17:40,455 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "...", "tool_name": "music_control", "tool_args": {"mode": "volume", "volume": 25}, "requires_confirmation": false}
+2026-04-19 15:17:40,455 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "...", "tool_name": "music_control", "tool_args": {"mode": "volume", "volume": 25}, "requires_confirmation": false}
+2026-04-19 15:17:40,456 | DEBUG | jarvis | Assistant response: ...
+2026-04-19 15:17:57,393 | INFO | jarvis | Received user input: сделай Громкость тише
+2026-04-19 15:17:57,393 | INFO | jarvis | User said: сделай Громкость тише
+2026-04-19 15:18:07,645 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "тише.", "tool_name": "music_control", "tool_args": {"action": "volume", "level": "25%"}, "requires_confirmation": true}
+2026-04-19 15:18:07,646 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "тише.", "tool_name": "music_control", "tool_args": {"action": "volume", "level": "25%"}, "requires_confirmation": true}
+2026-04-19 15:18:07,646 | DEBUG | jarvis | Assistant response: тише.
+2026-04-19 15:18:50,771 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube, ставит на паузу, переключает треки и меняет громкость.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 15:18:58,210 | INFO | jarvis | Received user input: включи музыку
+2026-04-19 15:18:58,210 | INFO | jarvis | User said: включи музыку
+2026-04-19 15:18:58,211 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 15:19:00,796 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Музыка для работы - Deep Focus Mix для программирования, кодирования (1:29:35).
+2026-04-19 15:19:00,796 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Музыка для работы - Deep Focus Mix для программирования, кодирования (1:29:35).
+2026-04-19 15:19:21,609 | INFO | jarvis | Received user input: сделай тише
+2026-04-19 15:19:21,610 | INFO | jarvis | User said: сделай тише
+2026-04-19 15:19:28,937 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "music_control", "tool_args": {"action": "lower_volume"}, "requires_confirmation": true}
+2026-04-19 15:19:28,937 | INFO | jarvis | Assistant understood: {"decision_type": "tool_call", "response_text": "", "tool_name": "music_control", "tool_args": {"action": "lower_volume"}, "requires_confirmation": true}
+2026-04-19 15:19:28,938 | INFO | jarvis | Assistant selected action: music_control | args={'action': 'lower_volume'}
+2026-04-19 15:19:28,938 | WARNING | jarvis | Decision blocked by safety guard.
+2026-04-19 15:19:32,254 | INFO | jarvis | Received user input: да
+2026-04-19 15:19:32,254 | INFO | jarvis | User said: да
+2026-04-19 15:19:32,254 | INFO | jarvis | Confirmation accepted for tool: music_control with args={'action': 'lower_volume'}
+2026-04-19 15:19:32,254 | INFO | jarvis | Executing tool: music_control with args={'action': 'lower_volume'}
+2026-04-19 15:19:32,254 | INFO | jarvis | Tool result: Не удалось выполнить команду музыки: неизвестное действие.
+2026-04-19 15:19:32,255 | DEBUG | jarvis | Assistant response: Не удалось выполнить команду музыки: неизвестное действие.
+2026-04-19 15:22:11,769 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube, ставит на паузу, переключает треки и меняет громкость.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 15:22:19,412 | INFO | jarvis | Received user input: включи музыку
+2026-04-19 15:22:19,412 | INFO | jarvis | User said: включи музыку
+2026-04-19 15:22:19,413 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 15:22:21,788 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Музыка для учебы, работы, релаксации и концентрации ｜#4 (1:01:14).
+2026-04-19 15:22:21,789 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Музыка для учебы, работы, релаксации и концентрации ｜#4 (1:01:14).
+2026-04-19 15:22:47,652 | INFO | jarvis | Received user input: сделай тише
+2026-04-19 15:22:47,653 | INFO | jarvis | User said: сделай тише
+2026-04-19 15:22:57,735 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "music_control", "tool_args": {"mode": "lower_volume"}, "requires_confirmation": true}
+2026-04-19 15:22:57,735 | INFO | jarvis | Assistant understood: {"decision_type": "tool_call", "response_text": "", "tool_name": "music_control", "tool_args": {"mode": "lower_volume"}, "requires_confirmation": true}
+2026-04-19 15:22:57,736 | INFO | jarvis | Assistant selected action: music_control | args={'mode': 'lower_volume'}
+2026-04-19 15:22:57,736 | WARNING | jarvis | Decision blocked by safety guard.
+2026-04-19 15:23:00,780 | INFO | jarvis | Received user input: да
+2026-04-19 15:23:00,780 | INFO | jarvis | User said: да
+2026-04-19 15:23:00,780 | INFO | jarvis | Confirmation accepted for tool: music_control with args={'mode': 'lower_volume'}
+2026-04-19 15:23:00,781 | INFO | jarvis | Executing tool: music_control with args={'mode': 'lower_volume'}
+2026-04-19 15:23:00,781 | INFO | jarvis | Tool result: Не удалось выполнить команду музыки: неизвестное действие.
+2026-04-19 15:23:00,781 | DEBUG | jarvis | Assistant response: Не удалось выполнить команду музыки: неизвестное действие.
+2026-04-19 15:23:15,551 | INFO | jarvis | Received user input: потише
+2026-04-19 15:23:15,551 | INFO | jarvis | User said: потише
+2026-04-19 15:23:15,552 | INFO | jarvis | Executing tool: music_control with args={'action': 'volume_down', 'source': ''}
+2026-04-19 15:23:15,620 | INFO | jarvis | Tool result: Делаю тише. Сейчас примерно 40%.
+2026-04-19 15:23:15,620 | DEBUG | jarvis | Assistant response: Делаю тише. Сейчас примерно 40%.
+2026-04-19 15:23:35,142 | INFO | jarvis | Received user input: потише
+2026-04-19 15:23:35,142 | INFO | jarvis | User said: потише
+2026-04-19 15:23:35,143 | INFO | jarvis | Executing tool: music_control with args={'action': 'volume_down', 'source': ''}
+2026-04-19 15:23:35,184 | INFO | jarvis | Tool result: Делаю тише. Сейчас примерно 30%.
+2026-04-19 15:23:35,185 | DEBUG | jarvis | Assistant response: Делаю тише. Сейчас примерно 30%.
+2026-04-19 15:23:38,166 | INFO | jarvis | Received user input: потише
+2026-04-19 15:23:38,166 | INFO | jarvis | User said: потише
+2026-04-19 15:23:38,166 | INFO | jarvis | Executing tool: music_control with args={'action': 'volume_down', 'source': ''}
+2026-04-19 15:23:38,203 | INFO | jarvis | Tool result: Делаю тише. Сейчас примерно 20%.
+2026-04-19 15:23:38,203 | DEBUG | jarvis | Assistant response: Делаю тише. Сейчас примерно 20%.
+2026-04-19 15:38:27,610 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube, ставит на паузу, переключает треки и меняет громкость.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 15:38:32,387 | INFO | jarvis | Received user input: drk.xb vepsre
+2026-04-19 15:38:32,388 | INFO | jarvis | User said: drk.xb vepsre
+2026-04-19 15:38:57,404 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "...", "tool_name": "browser_search", "tool_args": {"query": "drk.xb vepsre"}, "requires_confirmation": false}
+2026-04-19 15:38:57,404 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "...", "tool_name": "browser_search", "tool_args": {"query": "drk.xb vepsre"}, "requires_confirmation": false}
+2026-04-19 15:38:57,405 | DEBUG | jarvis | Assistant response: ...
+2026-04-19 15:39:08,684 | INFO | jarvis | Received user input: включи мызыку
+2026-04-19 15:39:08,684 | INFO | jarvis | User said: включи мызыку
+2026-04-19 15:39:18,545 | INFO | jarvis | Brain decision: {"decision_type": "tool_call", "response_text": "", "tool_name": "music_control", "tool_args": {"action": "play"}, "requires_confirmation": false}
+2026-04-19 15:39:18,546 | INFO | jarvis | Assistant understood: {"decision_type": "tool_call", "response_text": "", "tool_name": "music_control", "tool_args": {"action": "play"}, "requires_confirmation": false}
+2026-04-19 15:39:18,547 | INFO | jarvis | Assistant selected action: music_control | args={'action': 'play'}
+2026-04-19 15:39:18,547 | INFO | jarvis | Executing tool: music_control with args={'action': 'play'}
+2026-04-19 15:39:18,548 | INFO | jarvis | Tool result: Не удалось запустить музыку: источник не указан.
+2026-04-19 15:39:18,548 | DEBUG | jarvis | Assistant response: Не удалось запустить музыку: источник не указан.
+2026-04-19 15:39:29,418 | INFO | jarvis | Received user input: включи музыку
+2026-04-19 15:39:29,419 | INFO | jarvis | User said: включи музыку
+2026-04-19 15:39:29,419 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 15:39:31,571 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Музыка для повышения производительности труда и концентрации | Спокойная инструментальная фоновая му (3:04:11).
+2026-04-19 15:39:31,572 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Музыка для повышения производительности труда и концентрации | Спокойная инструментальная фоновая му (3:04:11).
+2026-04-19 15:40:10,483 | INFO | jarvis | Received user input: следующее видео
+2026-04-19 15:40:10,484 | INFO | jarvis | User said: следующее видео
+2026-04-19 15:40:10,484 | INFO | jarvis | Executing tool: music_control with args={'action': 'next', 'source': ''}
+2026-04-19 15:40:10,539 | INFO | jarvis | Tool result: Переключаю на следующее видео.
+2026-04-19 15:40:10,540 | DEBUG | jarvis | Assistant response: Переключаю на следующее видео.
+2026-04-19 15:41:15,745 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube, ставит на паузу, переключает треки и меняет громкость.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 15:41:15,746 | INFO | jarvis | Received user input: ????????? ?????
+2026-04-19 15:41:15,746 | INFO | jarvis | User said: ????????? ?????
+2026-04-19 15:41:27,128 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "...", "tool_name": "browser_search", "tool_args": {"query": "????"}, "requires_confirmation": false}
+2026-04-19 15:41:27,128 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "...", "tool_name": "browser_search", "tool_args": {"query": "????"}, "requires_confirmation": false}
+2026-04-19 15:41:27,128 | DEBUG | jarvis | Assistant response: ...
+2026-04-19 15:41:27,128 | INFO | jarvis | Received user input: ????????? ?????
+2026-04-19 15:41:27,129 | INFO | jarvis | User said: ????????? ?????
+2026-04-19 15:41:38,764 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "...", "tool_name": "browser_search", "tool_args": {"query": "????"}, "requires_confirmation": false}
+2026-04-19 15:41:38,765 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "...", "tool_name": "browser_search", "tool_args": {"query": "????"}, "requires_confirmation": false}
+2026-04-19 15:41:38,766 | DEBUG | jarvis | Assistant response: ...
+2026-04-19 15:41:38,766 | INFO | jarvis | Received user input: ????????? ????
+2026-04-19 15:41:38,766 | INFO | jarvis | User said: ????????? ????
+2026-04-19 15:41:51,013 | INFO | jarvis | Brain decision: {"decision_type": "respond", "response_text": "Пожалуйста, уточните, что именно нужно сделать.", "tool_name": "exact_tool_name", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 15:41:51,014 | INFO | jarvis | Assistant understood: {"decision_type": "respond", "response_text": "Пожалуйста, уточните, что именно нужно сделать.", "tool_name": "exact_tool_name", "tool_args": {}, "requires_confirmation": false}
+2026-04-19 15:41:51,014 | DEBUG | jarvis | Assistant response: Пожалуйста, уточните, что именно нужно сделать.
+2026-04-19 15:44:04,771 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube, ставит на паузу, переключает треки и меняет громкость.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 15:44:29,846 | INFO | jarvis | Received user input: включи музыку
+2026-04-19 15:44:29,846 | INFO | jarvis | User said: включи музыку
+2026-04-19 15:44:29,847 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 15:44:32,147 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Музыка для работы за компьютером | Фоновая музыка для концентрации и продуктивности (3:13:16).
+2026-04-19 15:44:32,148 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Музыка для работы за компьютером | Фоновая музыка для концентрации и продуктивности (3:13:16).
+2026-04-19 15:45:18,308 | INFO | jarvis | Received user input: следующее видео
+2026-04-19 15:45:18,308 | INFO | jarvis | User said: следующее видео
+2026-04-19 15:45:18,309 | INFO | jarvis | Executing tool: music_control with args={'action': 'next', 'source': ''}
+2026-04-19 15:45:18,364 | INFO | jarvis | Tool result: Переключаю на следующее видео.
+2026-04-19 15:45:18,364 | DEBUG | jarvis | Assistant response: Переключаю на следующее видео.
+2026-04-19 15:45:57,989 | DEBUG | jarvis | Available tools: [{'name': 'open_url', 'description': 'Открывает указанный URL в браузере по умолчанию.', 'risk_level': 'safe'}, {'name': 'browser_search', 'description': 'Открывает поиск Google по переданному запросу.', 'risk_level': 'safe'}, {'name': 'create_file', 'description': 'Создаёт текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'open_file', 'description': 'Открывает текстовый файл из рабочей папки и читает его содержимое.', 'risk_level': 'safe'}, {'name': 'edit_file', 'description': 'Изменяет текстовый файл в рабочей папке ассистента.', 'risk_level': 'confirm'}, {'name': 'get_weather', 'description': 'Получает текущую погоду на сегодня.', 'risk_level': 'safe'}, {'name': 'get_programming_news', 'description': 'Получает свежие новости программирования.', 'risk_level': 'safe'}, {'name': 'music_control', 'description': 'Управляет музыкой: ищет длинные видео на YouTube, ставит на паузу, переключает треки и меняет громкость.', 'risk_level': 'safe'}, {'name': 'delete_file', 'description': 'Удаляет файл из рабочей папки ассистента.', 'risk_level': 'dangerous'}]
+2026-04-19 15:46:19,725 | INFO | jarvis | Received user input: Включи музыку
+2026-04-19 15:46:19,726 | INFO | jarvis | User said: Включи музыку
+2026-04-19 15:46:19,726 | INFO | jarvis | Executing tool: music_control with args={'action': 'play', 'source': 'youtube'}
+2026-04-19 15:46:21,709 | INFO | jarvis | Tool result: Запускаю музыку на YouTube: Рабочая музыка для максимальной продуктивности и концентрации | Плейлист Night Cyber City (2:58:31).
+2026-04-19 15:46:21,710 | DEBUG | jarvis | Assistant response: Запускаю музыку на YouTube: Рабочая музыка для максимальной продуктивности и концентрации | Плейлист Night Cyber City (2:58:31).
+2026-04-19 15:46:55,639 | INFO | jarvis | Received user input: следующее видео
+2026-04-19 15:46:55,639 | INFO | jarvis | User said: следующее видео
+2026-04-19 15:46:55,640 | INFO | jarvis | Executing tool: music_control with args={'action': 'next', 'source': ''}
+2026-04-19 15:46:55,737 | INFO | jarvis | Tool result: Переключаю на следующее видео.
+2026-04-19 15:46:55,739 | DEBUG | jarvis | Assistant response: Переключаю на следующее видео.

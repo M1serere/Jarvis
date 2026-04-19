@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import random
 import re
+import time
 import webbrowser
 from typing import Any
 from urllib.parse import quote_plus
@@ -22,25 +23,80 @@ try:
 except ImportError:
     ctypes = None
 
+try:
+    import comtypes
+    from ctypes import POINTER, cast
+
+    from comtypes import CLSCTX_ALL
+    from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+
+    PYCAW_AVAILABLE = True
+except Exception:
+    comtypes = None
+    POINTER = None
+    cast = None
+    CLSCTX_ALL = None
+    AudioUtilities = None
+    IAudioEndpointVolume = None
+    PYCAW_AVAILABLE = False
+
 
 class MusicControlTool(BaseTool):
     name = "music_control"
     description = (
-        "Управляет музыкой: ищет длинные видео на YouTube "
-        "или переключает воспроизведение."
+        "Управляет музыкой: ищет длинные видео на YouTube, "
+        "ставит на паузу, переключает треки и меняет громкость."
     )
     risk_level = "safe"
 
+    VK_MEDIA_NEXT_TRACK = 0xB0
     VK_MEDIA_PLAY_PAUSE = 0xB3
+    VK_SHIFT = 0x10
+    VK_N = 0x4E
+    VK_VOLUME_MUTE = 0xAD
+    VK_VOLUME_DOWN = 0xAE
+    VK_VOLUME_UP = 0xAF
+
+    KEYEVENTF_KEYUP = 0x0002
+
     YOUTUBE_SEARCH_URL = "https://www.youtube.com/results?search_query={query}"
 
     def run(self, args: dict[str, Any]) -> str:
         action = str(args.get("action", "")).strip().lower()
         source = str(args.get("source", "")).strip().lower()
+        value = args.get("value")
 
         if action in {"pause", "stop", "play_pause", "toggle"}:
-            self._send_media_play_pause()
-            return "Переключаю воспроизведение музыки."
+            self._send_media_key(self.VK_MEDIA_PLAY_PAUSE)
+            return "Переключаю воспроизведение."
+
+        if action == "next":
+            self._go_to_next_track()
+            return "Переключаю на следующее видео."
+
+        if action in {"volume_up", "louder"}:
+            changed = self._change_system_volume(+10)
+            if changed is None:
+                return "Не удалось изменить громкость на этом устройстве."
+            return f"Делаю громче. Сейчас примерно {changed}%."
+
+        if action in {"volume_down", "quieter"}:
+            changed = self._change_system_volume(-10)
+            if changed is None:
+                return "Не удалось изменить громкость на этом устройстве."
+            return f"Делаю тише. Сейчас примерно {changed}%."
+
+        if action == "set_volume":
+            try:
+                percent = int(value)
+            except (TypeError, ValueError):
+                return "Некорректное значение громкости."
+
+            percent = max(0, min(100, percent))
+            success = self._set_system_volume(percent)
+            if not success:
+                return "Не удалось установить громкость на этом устройстве."
+            return f"Установил громкость на {percent}%."
 
         if action == "play":
             if source == "youtube":
@@ -95,6 +151,124 @@ class MusicControlTool(BaseTool):
                 "Не удалось автоматически выбрать видео, "
                 "поэтому я открыл поиск YouTube."
             )
+
+    def _send_media_key(self, vk_code: int) -> None:
+        if ctypes is None:
+            raise RuntimeError("ctypes недоступен.")
+
+        user32 = ctypes.windll.user32
+        user32.keybd_event(vk_code, 0, 0, 0)
+        time.sleep(0.05)
+        user32.keybd_event(vk_code, 0, self.KEYEVENTF_KEYUP, 0)
+
+    def _send_modified_key(self, modifier_vk: int, key_vk: int) -> None:
+        if ctypes is None:
+            raise RuntimeError("ctypes недоступен.")
+
+        user32 = ctypes.windll.user32
+        user32.keybd_event(modifier_vk, 0, 0, 0)
+        time.sleep(0.03)
+        user32.keybd_event(key_vk, 0, 0, 0)
+        time.sleep(0.03)
+        user32.keybd_event(key_vk, 0, self.KEYEVENTF_KEYUP, 0)
+        time.sleep(0.03)
+        user32.keybd_event(modifier_vk, 0, self.KEYEVENTF_KEYUP, 0)
+
+    def _get_foreground_window_title(self) -> str:
+        if ctypes is None:
+            return ""
+
+        user32 = ctypes.windll.user32
+        hwnd = user32.GetForegroundWindow()
+        if not hwnd:
+            return ""
+
+        length = user32.GetWindowTextLengthW(hwnd)
+        if length <= 0:
+            return ""
+
+        buffer = ctypes.create_unicode_buffer(length + 1)
+        user32.GetWindowTextW(hwnd, buffer, len(buffer))
+        return buffer.value.strip()
+
+    def _go_to_next_track(self) -> None:
+        title = self._get_foreground_window_title().lower()
+
+        # Focused YouTube tabs handle Shift+N more reliably than the global media key.
+        if "youtube" in title:
+            self._send_modified_key(self.VK_SHIFT, self.VK_N)
+            return
+
+        self._send_media_key(self.VK_MEDIA_NEXT_TRACK)
+
+    def _get_endpoint_volume(self):
+        if not PYCAW_AVAILABLE:
+            return None
+
+        try:
+            devices = AudioUtilities.GetSpeakers()
+            if devices is None:
+                return None
+
+            # Newer pycaw versions return an AudioDevice wrapper with EndpointVolume.
+            endpoint_volume = getattr(devices, "EndpointVolume", None)
+            if endpoint_volume is not None:
+                return endpoint_volume
+
+            # Backwards compatibility with older pycaw releases.
+            interface = devices.Activate(
+                IAudioEndpointVolume._iid_,
+                CLSCTX_ALL,
+                None,
+            )
+            return cast(interface, POINTER(IAudioEndpointVolume))
+        except Exception:
+            return None
+
+    def _get_system_volume_percent(self) -> int | None:
+        volume = self._get_endpoint_volume()
+        if volume is None:
+            return None
+
+        try:
+            current = volume.GetMasterVolumeLevelScalar()
+            return int(round(current * 100))
+        except Exception:
+            return None
+
+    def _set_system_volume(self, percent: int) -> bool:
+        volume = self._get_endpoint_volume()
+        if volume is None:
+            return False
+
+        try:
+            volume.SetMute(0, None)
+            volume.SetMasterVolumeLevelScalar(percent / 100.0, None)
+            return True
+        except Exception:
+            return False
+
+    def _change_system_volume(self, delta_percent: int) -> int | None:
+        current = self._get_system_volume_percent()
+        if current is not None:
+            new_value = max(0, min(100, current + delta_percent))
+            if self._set_system_volume(new_value):
+                return new_value
+
+        if ctypes is None:
+            return None
+
+        vk_code = self.VK_VOLUME_UP if delta_percent > 0 else self.VK_VOLUME_DOWN
+        presses = max(1, abs(delta_percent) // 2)
+
+        try:
+            for _ in range(presses):
+                self._send_media_key(vk_code)
+                time.sleep(0.03)
+        except Exception:
+            return None
+
+        return self._get_system_volume_percent()
 
     def _search_youtube_videos(self, query: str) -> list[dict[str, Any]]:
         url = self.YOUTUBE_SEARCH_URL.format(query=quote_plus(query))
@@ -219,11 +393,3 @@ class MusicControlTool(BaseTool):
             return numbers[0]
 
         return 0
-
-    def _send_media_play_pause(self) -> None:
-        if ctypes is None:
-            return
-
-        user32 = ctypes.windll.user32
-        user32.keybd_event(self.VK_MEDIA_PLAY_PAUSE, 0, 0, 0)
-        user32.keybd_event(self.VK_MEDIA_PLAY_PAUSE, 0, 2, 0)

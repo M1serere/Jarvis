@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import math
-import random
-import threading
 import time
+import threading
 import tkinter as tk
 
 from core.config import UI_WINDOW_TITLE
+from services.system_monitor import SystemMonitor, SystemStats
 
 
 class StatusWindow:
@@ -19,6 +18,7 @@ class StatusWindow:
     TEXT = "#d8f6ff"
     TEXT_DIM = "#7db6c8"
     ALERT = "#8ff7ff"
+    GRID = "#0b2537"
 
     def __init__(self) -> None:
         self.root = tk.Tk()
@@ -26,30 +26,27 @@ class StatusWindow:
         self.root.geometry("980x620")
         self.root.minsize(860, 540)
         self.root.configure(bg=self.BG)
-        self.root.resizable(True, True)
-
-        try:
-            self.root.attributes("-alpha", 0.98)
-        except Exception:
-            pass
 
         self.status_var = tk.StringVar(value="ГОТОВ")
         self.detail_var = tk.StringVar(value="Система в режиме ожидания")
         self.clock_var = tk.StringVar(value="00:00:00")
 
-        self._status_level = 0.35
-        self._angle = 0.0
-        self._particles: list[dict] = []
-        self._data_streams: list[dict] = []
-        self._busy = False
+        self.monitor = SystemMonitor()
+        self.stats_history: dict[str, list[float]] = {
+            "cpu": [],
+            "ram": [],
+            "disk": [],
+            "net_rx": [],
+            "net_tx": [],
+        }
+        self.max_points = 80
 
         self._build_layout()
-        self._create_background_elements()
-
         self.root.bind("<Configure>", self._on_resize)
 
-        self._animate()
         self._update_clock()
+        self._update_stats_loop()
+        self._animate()
 
     def _build_layout(self) -> None:
         self.main = tk.Frame(self.root, bg=self.BG)
@@ -101,41 +98,12 @@ class StatusWindow:
 
         self.subtitle_label = tk.Label(
             self.top_bar,
-            text="TACTICAL VOICE ASSISTANT / NEURAL CONTROL SYSTEM",
+            text="SYSTEM PERFORMANCE VISUALIZATION",
             bg=self.BG,
             fg=self.TEXT_DIM,
             font=("Consolas", 10),
         )
         self.subtitle_label.pack(anchor="w", pady=(2, 0))
-
-        self.center_status = tk.Frame(self.canvas, bg=self.BG)
-        self.canvas.create_window(
-            0,
-            0,
-            anchor="center",
-            window=self.center_status,
-            tags="center_status",
-        )
-
-        self.status_label = tk.Label(
-            self.center_status,
-            textvariable=self.status_var,
-            bg=self.BG,
-            fg=self.ALERT,
-            font=("Segoe UI", 26, "bold"),
-        )
-        self.status_label.pack()
-
-        self.detail_label = tk.Label(
-            self.center_status,
-            textvariable=self.detail_var,
-            bg=self.BG,
-            fg=self.TEXT,
-            font=("Segoe UI", 11),
-            wraplength=320,
-            justify="center",
-        )
-        self.detail_label.pack(pady=(6, 0))
 
         self.right_title = tk.Label(
             self.right_panel,
@@ -156,6 +124,7 @@ class StatusWindow:
         self.clock_label.pack(anchor="w", padx=16, pady=(0, 18))
 
         self.block_status = self._make_info_block("STATUS", "READY")
+        self.block_detail = self._make_info_block("DETAIL", "WAITING")
         self.block_mode = self._make_info_block("VOICE MODE", "WAKE WORD")
         self.block_core = self._make_info_block("CORE", "ONLINE")
         self.block_audio = self._make_info_block("AUDIO LINK", "STANDBY")
@@ -212,36 +181,14 @@ class StatusWindow:
             bg=self.PANEL_2,
             fg=self.TEXT,
             font=("Segoe UI", 12, "bold"),
+            justify="left",
+            wraplength=240,
         )
         value_label.pack(anchor="w", padx=10, pady=(2, 8))
         return value_label
 
-    def _create_background_elements(self) -> None:
-        for _ in range(40):
-            self._particles.append(
-                {
-                    "x": random.uniform(40, 700),
-                    "y": random.uniform(40, 500),
-                    "r": random.uniform(1.0, 2.5),
-                    "speed": random.uniform(0.2, 1.1),
-                    "alpha": random.uniform(0.2, 1.0),
-                }
-            )
-
-        for idx in range(14):
-            self._data_streams.append(
-                {
-                    "x": 40 + idx * 48,
-                    "offset": random.randint(0, 200),
-                    "speed": random.uniform(1.4, 3.2),
-                }
-            )
-
     def _on_resize(self, _event=None) -> None:
-        width = self.canvas.winfo_width()
-        height = self.canvas.winfo_height()
         self.canvas.coords("top_bar", 24, 18)
-        self.canvas.coords("center_status", width / 2, height / 2 + 110)
 
     def set_status(self, status: str, detail: str = "") -> None:
         self.root.after(0, self._apply_status, status, detail)
@@ -252,37 +199,33 @@ class StatusWindow:
 
         self.status_var.set(status_upper)
         self.detail_var.set(detail)
+
         self.block_status.configure(text=status_upper)
+        self.block_detail.configure(text=detail)
 
         normalized = status.strip().lower()
 
         if "слуш" in normalized:
-            self._status_level = 0.70
             self.block_audio.configure(text="INPUT CAPTURE")
             self.block_core.configure(text="ANALYZING")
             self._push_log("VOICE INPUT DETECTED")
         elif "дум" in normalized:
-            self._status_level = 0.92
             self.block_audio.configure(text="SIGNAL LOCK")
             self.block_core.configure(text="PROCESSING")
             self._push_log("INTENT ANALYSIS RUNNING")
         elif "выполня" in normalized:
-            self._status_level = 1.00
             self.block_audio.configure(text="COMMAND RELAY")
             self.block_core.configure(text="EXECUTING")
             self._push_log(f"EXECUTION: {detail}")
         elif "говор" in normalized:
-            self._status_level = 0.82
             self.block_audio.configure(text="VOICE OUTPUT")
             self.block_core.configure(text="RESPONDING")
             self._push_log("SPEECH SYNTHESIS ACTIVE")
         elif "актив" in normalized:
-            self._status_level = 0.86
             self.block_audio.configure(text="WAKE CONFIRMED")
             self.block_core.configure(text="ONLINE")
             self._push_log("WAKE WORD ACCEPTED")
         else:
-            self._status_level = 0.35
             self.block_audio.configure(text="STANDBY")
             self.block_core.configure(text="ONLINE")
             self._push_log("SYSTEM IDLE")
@@ -303,30 +246,43 @@ class StatusWindow:
         self.clock_var.set(time.strftime("%H:%M:%S"))
         self.root.after(1000, self._update_clock)
 
+    def _append_history(self, key: str, value: float) -> None:
+        history = self.stats_history[key]
+        history.append(value)
+        if len(history) > self.max_points:
+            del history[0]
+
+    def _update_stats_loop(self) -> None:
+        try:
+            stats = self.monitor.get_stats()
+            self._append_history("cpu", stats.cpu_percent)
+            self._append_history("ram", stats.memory_percent)
+            self._append_history("disk", stats.disk_percent)
+            self._append_history("net_rx", min(stats.net_recv_kbps / 20.0, 100.0))
+            self._append_history("net_tx", min(stats.net_sent_kbps / 20.0, 100.0))
+        except Exception as exc:
+            self._push_log(f"STATS ERROR: {exc}")
+
+        self.root.after(1000, self._update_stats_loop)
+
     def _animate(self) -> None:
         self.canvas.delete("hud")
 
         width = max(self.canvas.winfo_width(), 600)
         height = max(self.canvas.winfo_height(), 400)
-        cx = width * 0.50
-        cy = height * 0.46
 
         self._draw_grid(width, height)
-        self._draw_data_streams(width, height)
-        self._draw_particles()
-        self._draw_center_hud(cx, cy)
-        self._draw_side_readouts(width, height)
+        self._draw_chart_panel(width, height)
 
-        self._angle += 1.8
-        self.root.after(33, self._animate)
+        self.root.after(120, self._animate)
 
     def _draw_grid(self, width: int, height: int) -> None:
-        step = 34
+        step = 37
 
         for x in range(0, width, step):
             self.canvas.create_line(
                 x, 0, x, height,
-                fill="#0b2537",
+                fill=self.GRID,
                 width=1,
                 tags="hud",
             )
@@ -334,12 +290,12 @@ class StatusWindow:
         for y in range(0, height, step):
             self.canvas.create_line(
                 0, y, width, y,
-                fill="#0b2537",
+                fill=self.GRID,
                 width=1,
                 tags="hud",
             )
 
-        for y in range(0, height, 120):
+        for y in range(0, height, 148):
             self.canvas.create_line(
                 0, y, width, y,
                 fill="#10344d",
@@ -347,210 +303,166 @@ class StatusWindow:
                 tags="hud",
             )
 
-    def _draw_particles(self) -> None:
-        width = max(self.canvas.winfo_width(), 600)
-        height = max(self.canvas.winfo_height(), 400)
-
-        for p in self._particles:
-            p["y"] += p["speed"]
-            if p["y"] > height + 10:
-                p["y"] = -10
-                p["x"] = random.uniform(20, width - 20)
-
-            r = p["r"]
-            self.canvas.create_oval(
-                p["x"] - r,
-                p["y"] - r,
-                p["x"] + r,
-                p["y"] + r,
-                fill=self.CYAN_SOFT,
-                outline="",
-                tags="hud",
-            )
-
-    def _draw_data_streams(self, width: int, height: int) -> None:
-        glyphs = "01AF9C7E4D2B8"
-
-        for stream in self._data_streams:
-            x = stream["x"]
-            stream["offset"] += stream["speed"]
-            if stream["offset"] > 36:
-                stream["offset"] = 0
-
-            for i in range(-2, int(height / 18) + 3):
-                y = i * 18 + stream["offset"]
-                text = "".join(random.choice(glyphs) for _ in range(6))
-                alpha_color = self.TEXT_DIM if i % 4 else self.CYAN_SOFT
-                self.canvas.create_text(
-                    x,
-                    y,
-                    text=text,
-                    fill=alpha_color,
-                    font=("Consolas", 8),
-                    tags="hud",
-                )
-
-    def _draw_center_hud(self, cx: float, cy: float) -> None:
-        pulse = 8 * math.sin(math.radians(self._angle * 2.4))
-        main_r = 92 + pulse
-        outer_r = 135 + pulse * 0.6
-        ring_r = 176 + pulse * 0.4
-
-        self.canvas.create_oval(
-            cx - ring_r,
-            cy - ring_r,
-            cx + ring_r,
-            cy + ring_r,
-            outline="#0e4c74",
-            width=2,
-            tags="hud",
-        )
-
-        self.canvas.create_oval(
-            cx - outer_r,
-            cy - outer_r,
-            cx + outer_r,
-            cy + outer_r,
-            outline=self.CYAN_SOFT,
-            width=2,
-            tags="hud",
-        )
-
-        self.canvas.create_oval(
-            cx - main_r,
-            cy - main_r,
-            cx + main_r,
-            cy + main_r,
-            outline=self.CYAN,
-            width=3,
-            tags="hud",
-        )
-
-        inner_r = 42 + pulse * 0.25
-        self.canvas.create_oval(
-            cx - inner_r,
-            cy - inner_r,
-            cx + inner_r,
-            cy + inner_r,
-            fill="#06263b",
-            outline=self.CYAN,
-            width=2,
-            tags="hud",
-        )
-
-        for i in range(0, 360, 30):
-            angle = math.radians(i + self._angle)
-            x1 = cx + math.cos(angle) * (outer_r + 6)
-            y1 = cy + math.sin(angle) * (outer_r + 6)
-            x2 = cx + math.cos(angle) * (outer_r + 22)
-            y2 = cy + math.sin(angle) * (outer_r + 22)
-            self.canvas.create_line(
-                x1, y1, x2, y2,
-                fill=self.CYAN_SOFT,
-                width=2,
-                tags="hud",
-            )
-
-        for i in range(0, 360, 45):
-            angle = math.radians(-i + self._angle * 1.5)
-            x1 = cx + math.cos(angle) * (main_r - 18)
-            y1 = cy + math.sin(angle) * (main_r - 18)
-            x2 = cx + math.cos(angle) * (main_r + 14)
-            y2 = cy + math.sin(angle) * (main_r + 14)
-            self.canvas.create_line(
-                x1, y1, x2, y2,
-                fill=self.ALERT,
-                width=2,
-                tags="hud",
-            )
-
-        sweep_extent = 32 + self._status_level * 90
-        self.canvas.create_arc(
-            cx - outer_r - 10,
-            cy - outer_r - 10,
-            cx + outer_r + 10,
-            cy + outer_r + 10,
-            start=self._angle * 2,
-            extent=sweep_extent,
-            style="arc",
-            outline=self.ALERT,
-            width=4,
-            tags="hud",
-        )
-
-        self.canvas.create_line(cx - 210, cy, cx - 118, cy, fill=self.CYAN_SOFT, width=2, tags="hud")
-        self.canvas.create_line(cx + 118, cy, cx + 210, cy, fill=self.CYAN_SOFT, width=2, tags="hud")
-        self.canvas.create_line(cx, cy - 210, cx, cy - 118, fill=self.CYAN_SOFT, width=2, tags="hud")
-        self.canvas.create_line(cx, cy + 118, cx, cy + 210, fill=self.CYAN_SOFT, width=2, tags="hud")
+    def _draw_chart_panel(self, width: int, height: int) -> None:
+        left = 28
+        right = width - 28
+        top = 90
+        bottom = height - 28
 
         self.canvas.create_text(
-            cx,
-            cy,
-            text="AI",
-            fill=self.TEXT,
-            font=("Segoe UI", 24, "bold"),
+            left,
+            60,
+            anchor="w",
+            text="LIVE SYSTEM GRAPHS",
+            fill=self.CYAN,
+            font=("Segoe UI", 18, "bold"),
             tags="hud",
         )
 
-        percent = int(self._status_level * 100)
         self.canvas.create_text(
-            cx,
-            cy + 56,
-            text=f"CORE LOAD {percent}%",
+            left,
+            82,
+            anchor="w",
+            text="CPU / RAM / DISK / NETWORK",
             fill=self.TEXT_DIM,
+            font=("Consolas", 10),
+            tags="hud",
+        )
+
+        chart_gap = 12
+        col_gap = 16
+        row_gap = 16
+
+        chart_w = (right - left - col_gap) / 2
+        chart_h = (bottom - top - row_gap) / 3
+
+        charts = [
+            ("CPU", self.stats_history["cpu"], 0, 0, lambda: self._cpu_label()),
+            ("RAM", self.stats_history["ram"], 1, 0, lambda: self._ram_label()),
+            ("DISK", self.stats_history["disk"], 2, 0, lambda: self._disk_label()),
+            ("NET RX", self.stats_history["net_rx"], 0, 1, lambda: self._net_rx_label()),
+            ("NET TX", self.stats_history["net_tx"], 1, 1, lambda: self._net_tx_label()),
+        ]
+
+        for title, values, row, col, label_fn in charts:
+            x1 = left + col * (chart_w + col_gap)
+            y1 = top + row * (chart_h + row_gap)
+            x2 = x1 + chart_w
+            y2 = y1 + chart_h
+            self._draw_single_chart(x1, y1, x2, y2, title, values, label_fn())
+
+        # пустой декоративный блок справа снизу
+        x1 = left + 1 * (chart_w + col_gap)
+        y1 = top + 2 * (chart_h + row_gap)
+        x2 = x1 + chart_w
+        y2 = y1 + chart_h
+
+        self.canvas.create_rectangle(
+            x1, y1, x2, y2,
+            outline=self.LINE,
+            width=1,
+            tags="hud",
+        )
+        self.canvas.create_text(
+            x1 + 14,
+            y1 + 16,
+            anchor="nw",
+            text="JARVIS CORE",
+            fill=self.CYAN,
+            font=("Consolas", 10, "bold"),
+            tags="hud",
+        )
+        self.canvas.create_text(
+            x1 + 14,
+            y1 + 42,
+            anchor="nw",
+            text=f"STATUS   {self.status_var.get()}",
+            fill=self.TEXT,
+            font=("Consolas", 10),
+            tags="hud",
+        )
+        self.canvas.create_text(
+            x1 + 14,
+            y1 + 64,
+            anchor="nw",
+            text=f"DETAIL   {self.detail_var.get()[:28]}",
+            fill=self.TEXT_DIM,
+            font=("Consolas", 10),
+            tags="hud",
+        )
+        self.canvas.create_text(
+            x1 + 14,
+            y1 + 96,
+            anchor="nw",
+            text="VISUALIZATION NODE ACTIVE",
+            fill=self.CYAN_SOFT,
+            font=("Consolas", 10),
+            tags="hud",
+        )
+
+    def _draw_single_chart(
+        self,
+        x1: float,
+        y1: float,
+        x2: float,
+        y2: float,
+        title: str,
+        values: list[float],
+        value_text: str,
+    ) -> None:
+        self.canvas.create_rectangle(
+            x1, y1, x2, y2,
+            outline=self.LINE,
+            width=1,
+            tags="hud",
+        )
+
+        self.canvas.create_text(
+            x1 + 12,
+            y1 + 12,
+            anchor="nw",
+            text=title,
+            fill=self.CYAN,
             font=("Consolas", 10, "bold"),
             tags="hud",
         )
 
-    def _draw_side_readouts(self, width: int, height: int) -> None:
-        left_x = 100
-        right_x = width - 180
+        self.canvas.create_text(
+            x2 - 12,
+            y1 + 12,
+            anchor="ne",
+            text=value_text,
+            fill=self.TEXT,
+            font=("Consolas", 10),
+            tags="hud",
+        )
 
-        readings_left = [
-            f"FFT {random.randint(12, 99)}.{random.randint(0,9)}",
-            f"MIC {random.randint(40, 87)}%",
-            f"LANG RU",
-            f"LAT {random.randint(100, 999)}ms",
-        ]
+        plot_left = x1 + 10
+        plot_top = y1 + 34
+        plot_right = x2 - 10
+        plot_bottom = y2 - 12
 
-        readings_right = [
-            f"MEM {random.randint(18, 66)}%",
-            f"CPU {random.randint(9, 52)}%",
-            f"NODES {random.randint(3, 12)}",
-            f"LINK OK",
-        ]
-
-        top_y = 120
-        for idx, item in enumerate(readings_left):
-            y = top_y + idx * 26
-            self.canvas.create_text(
-                left_x,
-                y,
-                text=item,
-                fill=self.TEXT_DIM if idx % 2 else self.CYAN,
-                font=("Consolas", 10),
-                anchor="w",
+        for i in range(1, 4):
+            yy = plot_top + (plot_bottom - plot_top) * i / 4
+            self.canvas.create_line(
+                plot_left, yy, plot_right, yy,
+                fill="#10344d",
+                width=1,
                 tags="hud",
             )
 
-        for idx, item in enumerate(readings_right):
-            y = top_y + idx * 26
-            self.canvas.create_text(
-                right_x,
-                y,
-                text=item,
-                fill=self.TEXT_DIM if idx % 2 else self.CYAN,
-                font=("Consolas", 10),
-                anchor="w",
-                tags="hud",
-            )
+        if len(values) < 2:
+            return
 
-        wave_y = height - 90
         points = []
-        for x in range(40, width - 40, 12):
-            value = math.sin((x / 22) + math.radians(self._angle * 3)) * 12
-            value += math.sin((x / 57) + math.radians(self._angle * 2)) * 7
-            points.extend([x, wave_y + value])
+        count = len(values)
+        width = plot_right - plot_left
+        height = plot_bottom - plot_top
+
+        for idx, value in enumerate(values):
+            x = plot_left + (width * idx / max(count - 1, 1))
+            y = plot_bottom - (max(0.0, min(value, 100.0)) / 100.0) * height
+            points.extend([x, y])
 
         self.canvas.create_line(
             *points,
@@ -560,15 +472,30 @@ class StatusWindow:
             tags="hud",
         )
 
-        self.canvas.create_text(
-            44,
-            wave_y - 22,
-            text="SIGNAL TRACE",
-            fill=self.TEXT_DIM,
-            font=("Consolas", 9),
-            anchor="w",
-            tags="hud",
-        )
+    def _cpu_label(self) -> str:
+        if not self.stats_history["cpu"]:
+            return "--"
+        return f"{self.stats_history['cpu'][-1]:.0f}%"
+
+    def _ram_label(self) -> str:
+        if not self.stats_history["ram"]:
+            return "--"
+        return f"{self.stats_history['ram'][-1]:.0f}%"
+
+    def _disk_label(self) -> str:
+        if not self.stats_history["disk"]:
+            return "--"
+        return f"{self.stats_history['disk'][-1]:.0f}%"
+
+    def _net_rx_label(self) -> str:
+        if not self.stats_history["net_rx"]:
+            return "--"
+        return f"{self.stats_history['net_rx'][-1] * 20:.0f} KB/s"
+
+    def _net_tx_label(self) -> str:
+        if not self.stats_history["net_tx"]:
+            return "--"
+        return f"{self.stats_history['net_tx'][-1] * 20:.0f} KB/s"
 
     def start_in_thread(self) -> None:
         thread = threading.Thread(target=self.root.mainloop, daemon=True)

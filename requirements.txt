@@ -7,3 +7,4 @@ pycaw>=20240210
 comtypes>=1.4.5
 edge-tts>=7.2.8
 pygame>=2.6.0
+psutil>=6.0.0

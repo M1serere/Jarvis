@@ -1,3 +1,5 @@
+import threading
+
 from voice.voice_controller import VoiceController
 from voice.wake_word import WakeWordListener
 
@@ -10,8 +12,15 @@ def main() -> None:
     print("Say 'Jarvis' to activate the assistant.")
     print("Press Ctrl+C to stop.\n")
 
+    listener_thread = threading.Thread(
+        target=wake_listener.listen,
+        args=(voice_controller.handle_wake,),
+        daemon=True,
+    )
+    listener_thread.start()
+
     try:
-        wake_listener.listen(voice_controller.handle_wake)
+        voice_controller.ui.run()
     except KeyboardInterrupt:
         print("\nJarvis stopped.")
 

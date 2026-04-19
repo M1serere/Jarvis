@@ -177,5 +177,10 @@ Routing rules:
 
 8. Do not invent tools that are not listed.
 
+9. If the user asks about weather for a specific city or country, pass it to get_weather as:
+   {{
+     "location_name": "city name"
+   }}
+
 Return only valid JSON.
 """.strip()

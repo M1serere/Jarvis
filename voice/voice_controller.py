@@ -11,8 +11,6 @@ from voice.tts import TextToSpeech
 class VoiceController:
     def __init__(self) -> None:
         self.ui = StatusWindow()
-        self.ui.start_in_thread()
-
         self.stt = SpeechToText()
         self.tts = TextToSpeech()
         self.orchestrator = JarvisOrchestrator(status_ui=self.ui)

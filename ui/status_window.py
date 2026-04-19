@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import threading
 import tkinter as tk
 
 from core.config import UI_WINDOW_TITLE
@@ -36,9 +35,12 @@ class StatusWindow:
         ).pack(pady=(6, 0))
 
     def set_status(self, status: str, detail: str = "") -> None:
-        self.status_var.set(status)
-        self.detail_var.set(detail)
+        def apply_update() -> None:
+            self.status_var.set(status)
+            self.detail_var.set(detail)
 
-    def start_in_thread(self) -> None:
-        thread = threading.Thread(target=self.root.mainloop, daemon=True)
-        thread.start()
+        if self.root.winfo_exists():
+            self.root.after(0, apply_update)
+
+    def run(self) -> None:
+        self.root.mainloop()

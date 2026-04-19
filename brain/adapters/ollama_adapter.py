@@ -165,6 +165,7 @@ Routing rules:
    - get_weather
    - get_programming_news
    - open_file
+   - window_control
 
 6. If the user asks to create a file with text, use create_file with:
    {{
@@ -180,6 +181,11 @@ Routing rules:
 9. If the user asks about weather for a specific city or country, pass it to get_weather as:
    {{
      "location_name": "city name"
+   }}
+
+10. If the user asks to minimize, restore, or manage all windows in Windows, use window_control with:
+   {{
+     "action": "minimize_all" | "restore_all"
    }}
 
 Return only valid JSON.

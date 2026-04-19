@@ -144,6 +144,12 @@ class JarvisOrchestrator:
         if work_time_response is not None:
             return work_time_response
 
+        window_response = self._handle_window_request(lowered_text)
+        if window_response is not None:
+            self.memory.add_assistant_message(window_response.response_text)
+            self.logger.debug("Assistant response: %s", window_response.response_text)
+            return window_response
+
         music_response = self._handle_explicit_music_request(text)
         if music_response is not None:
             self.memory.add_assistant_message(music_response.response_text)
@@ -438,6 +444,49 @@ class JarvisOrchestrator:
             raw_decision=empty_decision(),
             approved=True,
         )
+
+    def _handle_window_request(self, lowered_text: str) -> OrchestratorResponse | None:
+        cleaned_text = lowered_text.strip(" .!?")
+
+        minimize_triggers = {
+            "сверни все окна",
+            "сверни окна",
+            "сверни всё",
+            "сверни все",
+            "покажи рабочий стол",
+        }
+        restore_triggers = {
+            "разверни все окна",
+            "разверни окна",
+            "разверни всё",
+            "разверни все",
+            "восстанови все окна",
+            "верни все окна",
+        }
+
+        if cleaned_text in minimize_triggers:
+            result = self._handle_tool_call(
+                "window_control",
+                {"action": "minimize_all"},
+            )
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        if cleaned_text in restore_triggers:
+            result = self._handle_tool_call(
+                "window_control",
+                {"action": "restore_all"},
+            )
+            return OrchestratorResponse(
+                response_text=result,
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        return None
 
     def _format_work_duration(self, elapsed_seconds: int) -> str:
         total_minutes = max(0, elapsed_seconds // 60)

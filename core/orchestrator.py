@@ -12,6 +12,7 @@ from memory.references import ReferenceResolver
 from memory.session_memory import SessionMemory
 from memory.user_profile import UserProfile
 from safety.guard import SafetyGuard
+from safety.messages import build_confirmation_message
 from tools.registry import ToolRegistry
 
 
@@ -139,6 +140,12 @@ class JarvisOrchestrator:
                 raw_decision=empty_decision(),
                 approved=True,
             )
+
+        goodbye_response = self._handle_goodbye_request(lowered_text)
+        if goodbye_response is not None:
+            self.memory.add_assistant_message(goodbye_response.response_text)
+            self.logger.debug("Assistant response: %s", goodbye_response.response_text)
+            return goodbye_response
 
         work_time_response = self._handle_work_time_request(lowered_text)
         if work_time_response is not None:
@@ -445,6 +452,23 @@ class JarvisOrchestrator:
             approved=True,
         )
 
+    def _handle_goodbye_request(self, lowered_text: str) -> OrchestratorResponse | None:
+        cleaned_text = re.sub(r"\s+", " ", lowered_text.strip(" .!?"))
+        goodbye_triggers = {
+            "джарвис, хорошая работа до встречи",
+            "джарвис хорошая работа до встречи",
+        }
+
+        if cleaned_text not in goodbye_triggers:
+            return None
+
+        self.memory.set_pending_question("power_action")
+        return OrchestratorResponse(
+            response_text="Спасибо. Перевести ноутбук в сон или выключить его?",
+            raw_decision=empty_decision(),
+            approved=True,
+        )
+
     def _handle_window_request(self, lowered_text: str) -> OrchestratorResponse | None:
         cleaned_text = lowered_text.strip(" .!?")
 
@@ -537,6 +561,46 @@ class JarvisOrchestrator:
                 response_text=result,
                 raw_decision=empty_decision(),
                 approved=True,
+            )
+
+        if pending_question.question_type == "power_action":
+            normalized = re.sub(r"\s+", " ", text.strip().lower().strip(" .!?"))
+
+            if normalized in self.CANCEL_WORDS:
+                self.memory.clear_pending_question()
+                return OrchestratorResponse(
+                    response_text="Хорошо, отменяю завершение работы.",
+                    raw_decision=empty_decision(),
+                    approved=False,
+                )
+
+            action = None
+            if "сон" in normalized:
+                action = "sleep"
+            elif "выключ" in normalized:
+                action = "shutdown"
+
+            if action is None:
+                return OrchestratorResponse(
+                    response_text="Уточни, пожалуйста: перевести ноутбук в сон или выключить?",
+                    raw_decision=empty_decision(),
+                    approved=False,
+                )
+
+            self.memory.clear_pending_question()
+            confirmation_message = build_confirmation_message(
+                "system_power",
+                {"action": action},
+            )
+            self.memory.set_pending_action(
+                tool_name="system_power",
+                tool_args={"action": action},
+                confirmation_message=confirmation_message,
+            )
+            return OrchestratorResponse(
+                response_text=confirmation_message,
+                raw_decision=empty_decision(),
+                approved=False,
             )
 
         self.memory.clear_pending_question()

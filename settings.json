@@ -1,3 +1,4 @@
 {
-  "voice_volume": 41
+  "voice_volume": 41,
+  "autostart_enabled": true
 }

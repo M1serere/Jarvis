@@ -8,15 +8,18 @@ class SpeechToText:
         self.recognizer = sr.Recognizer()
 
     def listen(self) -> str:
-        with sr.Microphone() as source:
-            print("🎤 Слушаю...")
-            audio = self.recognizer.listen(source)
+        try:
+            with sr.Microphone() as source:
+                print("Listening...")
+                audio = self.recognizer.listen(source)
+        except OSError as exc:
+            return f"Ошибка STT: {exc}"
 
         try:
             text = self.recognizer.recognize_google(audio, language="ru-RU")
-            print(f"🧠 Распознано: {text}")
+            print(f"Распознано: {text}")
             return text
         except sr.UnknownValueError:
             return ""
-        except sr.RequestError as e:
-            return f"Ошибка STT: {e}"
+        except sr.RequestError as exc:
+            return f"Ошибка STT: {exc}"

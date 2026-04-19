@@ -10,6 +10,7 @@ from tools.implementations.get_programming_news import GetProgrammingNewsTool
 from tools.implementations.get_weather import GetWeatherTool
 from tools.implementations.open_file import OpenFileTool
 from tools.implementations.open_url import OpenUrlTool
+from tools.implementations.system_power import SystemPowerTool
 from tools.implementations.window_control import WindowControlTool
 
 from tools.implementations.music_control import MusicControlTool
@@ -31,6 +32,7 @@ class ToolRegistry:
         self.register(GetProgrammingNewsTool())
         self.register(MusicControlTool())
         self.register(WindowControlTool())
+        self.register(SystemPowerTool())
         self.register(DeleteFileTool())
 
     def register(self, tool: BaseTool) -> None:

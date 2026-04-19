@@ -28,32 +28,39 @@ class WakeWordListener:
     def listen(self, callback: Callable[[], None]) -> None:
         print(f"Listening for wake words: {', '.join(self.keywords)}")
 
-        with sr.Microphone() as source:
-            self.recognizer.adjust_for_ambient_noise(source, duration=1)
+        while True:
+            should_activate = False
 
-            while True:
-                try:
-                    audio = self.recognizer.listen(
-                        source,
-                        timeout=self.timeout,
-                        phrase_time_limit=self.phrase_time_limit,
-                    )
-                except sr.WaitTimeoutError:
-                    continue
+            with sr.Microphone() as source:
+                self.recognizer.adjust_for_ambient_noise(source, duration=1)
 
-                try:
-                    text = self.recognizer.recognize_google(
-                        audio,
-                        language=self.language,
-                    ).lower()
-                    if self.debug:
-                        print(f"Wake recognized: {text}")
-                except (sr.UnknownValueError, sr.RequestError):
-                    continue
+                while True:
+                    try:
+                        audio = self.recognizer.listen(
+                            source,
+                            timeout=self.timeout,
+                            phrase_time_limit=self.phrase_time_limit,
+                        )
+                    except sr.WaitTimeoutError:
+                        continue
 
-                if self._is_wake_phrase(text):
-                    print("Wake word detected!")
-                    callback()
+                    try:
+                        text = self.recognizer.recognize_google(
+                            audio,
+                            language=self.language,
+                        ).lower()
+                        if self.debug:
+                            print(f"Wake recognized: {text}")
+                    except (sr.UnknownValueError, sr.RequestError):
+                        continue
+
+                    if self._is_wake_phrase(text):
+                        print("Wake word detected!")
+                        should_activate = True
+                        break
+
+            if should_activate:
+                callback()
 
     @staticmethod
     def _normalize_text(text: str) -> str:

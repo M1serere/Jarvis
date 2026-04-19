@@ -25,6 +25,14 @@ def build_confirmation_message(tool_name: str | None, tool_args: dict) -> str:
 
         return f"Подтвердить изменение файла {filename}? Ответь 'да' или 'нет'."
 
+    if tool_name == "system_power":
+        action = str(tool_args.get("action", "")).strip().lower()
+        if action == "sleep":
+            return "Подтвердить перевод компьютера в спящий режим? Ответь 'да' или 'нет'."
+        if action == "shutdown":
+            return "Подтвердить выключение компьютера? Ответь 'да' или 'нет'."
+        return "Подтвердить действие с питанием компьютера? Ответь 'да' или 'нет'."
+
     if tool_name:
         return f"Подтвердить действие '{tool_name}'? Ответь 'да' или 'нет'."
 

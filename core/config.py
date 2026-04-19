@@ -42,26 +42,14 @@ PROGRAMMING_NEWS_FEEDS = [
 BRAIN_PROVIDER = os.getenv("JARVIS_BRAIN_PROVIDER", "ollama").lower()
 
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+# OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:0.6b")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen3:1.7b")
 OLLAMA_TIMEOUT_SECONDS = int(os.getenv("OLLAMA_TIMEOUT_SECONDS", "120"))
 OLLAMA_KEEP_ALIVE = os.getenv("OLLAMA_KEEP_ALIVE", "10m")
 
 DEFAULT_USER_NAME = "Госпожа"
 
-# DEFAULT_YOUTUBE_MUSIC_URL = "https://www.youtube.com/watch?v=de4zk7OiwuI"
-# DEFAULT_YANDEX_MUSIC_URL = "https://music.yandex.ru/"
-
 DEFAULT_YOUTUBE_MUSIC_URL = "https://www.youtube.com/watch?v=de4zk7OiwuI"
-
-# Можно указать:
-# - путь к .exe
-# - путь к .lnk
-# - URL
-# - путь к .bat / .cmd / .ps1
-YANDEX_MUSIC_LAUNCH_TARGET = os.getenv("YANDEX_MUSIC_LAUNCH_TARGET", "C:\\Users\\croco\\AppData\\Local\\Programs\\YandexMusic\\Яндекс Музыка.exe")
-
-# Необязательно, но удобно:
-YANDEX_MUSIC_WAVE_URL = os.getenv("YANDEX_MUSIC_WAVE_URL", "")
 
 LOG_RETENTION_DAYS = 180
 LOG_FILE_NAME = "jarvis.log"

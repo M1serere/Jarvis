@@ -1,37 +1,23 @@
 from __future__ import annotations
-from urllib import response
 
 from brain.brain import Brain
+from core.config import BASE_DIR
 from core.logger import setup_logger
-from core.models import OrchestratorResponse, UserMessage
+from core.models import OrchestratorResponse, UserMessage, empty_decision
+from memory.facts_memory import FactsMemory
+from memory.persistent_memory import PersistentMemory
+from memory.references import ReferenceResolver
 from memory.session_memory import SessionMemory
+from memory.user_profile import UserProfile
 from safety.guard import SafetyGuard
 from tools.registry import ToolRegistry
 
-from core.models import OrchestratorResponse, UserMessage, empty_decision
-
-from memory.persistent_memory import PersistentMemory
-from memory.user_profile import UserProfile
-from memory.references import ReferenceResolver
-from core.config import BASE_DIR
-
-from memory.facts_memory import FactsMemory
-
-from core.models import OrchestratorResponse, UserMessage, empty_decision
 
 class JarvisOrchestrator:
     CONFIRM_WORDS = {"да", "ага", "подтверждаю", "yes", "y"}
     CANCEL_WORDS = {"нет", "отмена", "отменить", "no", "n"}
 
     MUSIC_YOUTUBE_WORDS = {"ютуб", "youtube", "на ютубе", "в ютубе"}
-    MUSIC_YANDEX_WORDS = {
-        "яндекс",
-        "яндекс музыка",
-        "yandex",
-        "yandex music",
-        "в яндекс музыке",
-        "на яндекс музыке",
-    }
 
     def __init__(self, status_ui=None) -> None:
         self.logger = setup_logger()
@@ -46,12 +32,11 @@ class JarvisOrchestrator:
         self.persistent = PersistentMemory(BASE_DIR / "memory.json")
         self.profile = UserProfile(self.persistent)
         self.references = ReferenceResolver()
-
         self.facts_memory = FactsMemory(self.persistent)
 
     def _set_status(self, status: str, detail: str = "") -> None:
-            if self.status_ui is not None:
-                self.status_ui.set_status(status, detail)
+        if self.status_ui is not None:
+            self.status_ui.set_status(status, detail)
 
     def handle_user_input(self, text: str) -> OrchestratorResponse:
         self._set_status("Думает", "Анализ команды")
@@ -60,7 +45,6 @@ class JarvisOrchestrator:
 
         user_message = UserMessage(text=text)
         self.memory.add_user_message(text)
-
 
         pending_action = self.memory.get_pending_action()
         if pending_action is not None:
@@ -115,13 +99,12 @@ class JarvisOrchestrator:
             )
 
         if lowered_text.startswith("джарвис, запомни "):
-            # fact = normalized_text[len("Джарвис, запомни "):].strip(" .!?")
             fact = normalized_text[len("Джарвис, запомни "):].strip(" .!?")
             if not fact:
                 fact = normalized_text[len("джарвис, запомни "):].strip(" .!?")
 
             if fact.lower().startswith("что "):
-                fact = fact[5:].strip()
+                fact = fact[4:].strip()
 
             if not fact:
                 fact = normalized_text[len("джарвис, запомни "):].strip(" .!?")
@@ -153,7 +136,7 @@ class JarvisOrchestrator:
                 raw_decision=empty_decision(),
                 approved=True,
             )
-        
+
         music_response = self._handle_explicit_music_request(text)
         if music_response is not None:
             self.memory.add_assistant_message(music_response.response_text)
@@ -166,8 +149,8 @@ class JarvisOrchestrator:
             available_tools=self.tools.list_tools(),
         )
         self.logger.info("Brain decision: %s", decision.model_dump_json())
-        
         self.logger.info("Assistant understood: %s", decision.model_dump_json())
+
         if decision.decision_type == "tool_call":
             self.logger.info(
                 "Assistant selected action: %s | args=%s",
@@ -189,15 +172,12 @@ class JarvisOrchestrator:
             self.memory.add_assistant_message(response_text)
             self.logger.warning("Decision blocked by safety guard.")
             self._set_status("Готов", "Ожидание подтверждения")
-            
+
             return OrchestratorResponse(
                 response_text=response_text,
                 raw_decision=decision,
                 approved=False,
             )
-
-
-        #self._set_status("Выполняет", f"Инструмент: {decision.tool_name}")
 
         if decision.decision_type == "tool_call":
             self._set_status("Выполняет", f"Инструмент: {decision.tool_name}")
@@ -259,6 +239,7 @@ class JarvisOrchestrator:
                 raw_decision=empty_decision(),
                 approved=False,
             )
+
         self._set_status("Готов", "Ожидание подтверждения")
         return OrchestratorResponse(
             response_text=(
@@ -270,7 +251,6 @@ class JarvisOrchestrator:
         )
 
     def _handle_tool_call(self, tool_name: str | None, tool_args: dict) -> str:
-        
         tool_args = self.references.resolve(tool_args)
 
         if not tool_name:
@@ -280,11 +260,11 @@ class JarvisOrchestrator:
         if not self.tools.has_tool(tool_name):
             self.logger.warning("Tool not found: %s", tool_name)
             return f"Инструмент '{tool_name}' пока недоступен."
-        
+
         if "filename" in tool_args:
             self.references.remember_file(tool_args["filename"])
             self.memory.set_last_file(tool_args["filename"])
-        
+
         try:
             self.logger.info("Executing tool: %s with args=%s", tool_name, tool_args)
             result = self.tools.execute(tool_name, tool_args)
@@ -293,7 +273,6 @@ class JarvisOrchestrator:
         except Exception as exc:
             self.logger.exception("Tool execution failed: %s", tool_name)
             return f"Во время выполнения инструмента '{tool_name}' произошла ошибка: {exc}"
-
 
     def _handle_explicit_music_request(self, text: str) -> OrchestratorResponse | None:
         lowered = text.strip().lower()
@@ -323,41 +302,20 @@ class JarvisOrchestrator:
             )
 
         if any(trigger in lowered for trigger in play_music_triggers):
-            if self._is_youtube_source(lowered):
-                result = self._handle_tool_call(
-                    "music_control",
-                    {"action": "play", "source": "youtube"},
-                )
-                return OrchestratorResponse(
-                    response_text=result,
-                    raw_decision=empty_decision(),
-                    approved=True,
-                )
-
-            if self._is_yandex_source(lowered):
-                result = self._handle_tool_call(
-                    "music_control",
-                    {"action": "play", "source": "yandex_music"},
-                )
-                return OrchestratorResponse(
-                    response_text=result,
-                    raw_decision=empty_decision(),
-                    approved=True,
-                )
-
-            self.memory.set_pending_question("music_source", {"action": "play"})
+            result = self._handle_tool_call(
+                "music_control",
+                {"action": "play", "source": "youtube"},
+            )
             return OrchestratorResponse(
-                response_text="Где включить музыку: на YouTube или в Яндекс Музыке?",
+                response_text=result,
                 raw_decision=empty_decision(),
                 approved=True,
             )
 
         return None
 
-
     def _handle_pending_question_reply(self, text: str) -> OrchestratorResponse:
         pending_question = self.memory.get_pending_question()
-        normalized = text.strip().lower()
 
         if pending_question is None:
             return OrchestratorResponse(
@@ -367,34 +325,15 @@ class JarvisOrchestrator:
             )
 
         if pending_question.question_type == "music_source":
-            if self._is_youtube_source(normalized):
-                self.memory.clear_pending_question()
-                result = self._handle_tool_call(
-                    "music_control",
-                    {"action": "play", "source": "youtube"},
-                )
-                return OrchestratorResponse(
-                    response_text=result,
-                    raw_decision=empty_decision(),
-                    approved=True,
-                )
-
-            if self._is_yandex_source(normalized):
-                self.memory.clear_pending_question()
-                result = self._handle_tool_call(
-                    "music_control",
-                    {"action": "play", "source": "yandex_music"},
-                )
-                return OrchestratorResponse(
-                    response_text=result,
-                    raw_decision=empty_decision(),
-                    approved=True,
-                )
-
+            self.memory.clear_pending_question()
+            result = self._handle_tool_call(
+                "music_control",
+                {"action": "play", "source": "youtube"},
+            )
             return OrchestratorResponse(
-                response_text="Я жду ответ: YouTube или Яндекс Музыка.",
+                response_text=result,
                 raw_decision=empty_decision(),
-                approved=False,
+                approved=True,
             )
 
         self.memory.clear_pending_question()
@@ -404,12 +343,5 @@ class JarvisOrchestrator:
             approved=False,
         )
 
-
     def _is_youtube_source(self, text: str) -> bool:
         return any(word in text for word in self.MUSIC_YOUTUBE_WORDS)
-
-
-    def _is_yandex_source(self, text: str) -> bool:
-        return any(word in text for word in self.MUSIC_YANDEX_WORDS)
-    
-    

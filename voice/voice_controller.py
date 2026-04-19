@@ -5,6 +5,7 @@ import threading
 
 from core.config import WORK_TIMER_SECONDS
 from core.orchestrator import JarvisOrchestrator
+from core.settings import AppSettings, SettingsStore
 from core.work_timer import WorkTimer
 from ui.status_window import StatusWindow
 from voice.stt import SpeechToText
@@ -13,9 +14,14 @@ from voice.tts import TextToSpeech
 
 class VoiceController:
     def __init__(self) -> None:
-        self.ui = StatusWindow()
+        self.settings_store = SettingsStore()
+        self.settings = self.settings_store.load()
         self.stt = SpeechToText()
-        self.tts = TextToSpeech()
+        self.tts = TextToSpeech(volume=self.settings.voice_volume)
+        self.ui = StatusWindow(
+            voice_volume=self.settings.voice_volume,
+            on_voice_volume_change=self.set_voice_volume,
+        )
         self.work_timer = WorkTimer(
             notify_callback=self.notify_break,
             work_limit_seconds=WORK_TIMER_SECONDS,
@@ -25,6 +31,15 @@ class VoiceController:
             work_time_provider=self.work_timer.get_elapsed_seconds,
         )
         self._activation_lock = threading.Lock()
+
+    def set_voice_volume(self, volume: int) -> None:
+        safe_volume = max(0, min(int(volume), 100))
+        self.settings = AppSettings(voice_volume=safe_volume)
+        self.tts.set_volume(safe_volume)
+        try:
+            self.settings_store.save(self.settings)
+        except Exception:
+            pass
 
     def start_work_timer(self) -> None:
         self.work_timer.start()

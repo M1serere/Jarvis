@@ -1,10 +1,27 @@
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
 from typing import Literal
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+PROJECT_DIR = Path(__file__).resolve().parent.parent
+
+
+def _resolve_base_dir() -> Path:
+    if getattr(sys, "frozen", False):
+        local_app_data = os.getenv("LOCALAPPDATA")
+        if local_app_data:
+            return Path(local_app_data) / "Jarvis"
+
+        return Path.home() / "AppData" / "Local" / "Jarvis"
+
+    return PROJECT_DIR
+
+
+BASE_DIR = _resolve_base_dir()
+BASE_DIR.mkdir(parents=True, exist_ok=True)
+
 LOGS_DIR = BASE_DIR / "logs"
 LOGS_DIR.mkdir(exist_ok=True)
 

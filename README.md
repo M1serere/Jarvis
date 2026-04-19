@@ -259,6 +259,25 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## 🪟 Build EXE + Installer
+
+For Windows packaging:
+
+```powershell
+.\build_exe.ps1
+```
+
+What the script does:
+
+* generates installer/exe icons from `j_logo.png`
+* builds `dist\Jarvis\Jarvis.exe` via PyInstaller
+* builds `installer\Output\JarvisSetup.exe` via Inno Setup 6
+
+Notes:
+
+* for installed builds, app data is stored in `%LOCALAPPDATA%\Jarvis`
+* `Inno Setup 6` must be installed for installer generation
+
 ---
 
 ## 💬 Example

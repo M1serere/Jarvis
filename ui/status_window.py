@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import math
 import time
-import threading
 import tkinter as tk
 from collections import deque
+from collections.abc import Callable
 
 from core.config import UI_WINDOW_TITLE
 from services.system_monitor import SystemMonitor
@@ -15,20 +15,21 @@ class StatusWindow:
     PANEL = "#071f33"
     PANEL_2 = "#0a2740"
     LINE = "#123a58"
-    CYAN = "#69e6ff"
-    CYAN_SOFT = "#3aa9d6"
-    TEXT = "#d8f6ff"
-    TEXT_DIM = "#7db6c8"
-    ALERT = "#8ff7ff"
-    GRID = "#0b2537"
-    PULSE = "#a6f6ff"
+    CYAN = "#69E6FF"
+    CYAN_SOFT = "#3AA9D6"
+    TEXT = "#D8F6FF"
+    TEXT_DIM = "#7DB6C8"
+    GRID = "#0B2537"
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        voice_volume: int = 80,
+        on_voice_volume_change: Callable[[int], None] | None = None,
+    ) -> None:
         self.root = tk.Tk()
         self.root.title(UI_WINDOW_TITLE)
         self.root.configure(bg=self.BG)
 
-        # overlay / fullscreen / borderless
         self.overlay_mode = True
         self.windowed_geometry = "980x620+80+60"
         self.root.geometry(self.windowed_geometry)
@@ -53,10 +54,15 @@ class StatusWindow:
         self.root.bind("<F11>", self._toggle_overlay_mode)
         self.root.bind("<Control-F11>", self._toggle_window_mode)
         self.root.bind("<Map>", self._handle_window_restore)
+        self.root.bind("<Button-1>", self._handle_global_click, add="+")
 
         self.status_var = tk.StringVar(value="ГОТОВ")
         self.detail_var = tk.StringVar(value="Система в режиме ожидания")
         self.clock_var = tk.StringVar(value="00:00:00")
+        self.voice_volume_var = tk.IntVar(value=max(0, min(voice_volume, 100)))
+        self.voice_volume_text_var = tk.StringVar()
+        self._on_voice_volume_change = on_voice_volume_change
+        self._settings_menu_visible = False
 
         self.monitor = SystemMonitor()
         self.stats_history: dict[str, list[float]] = {
@@ -67,7 +73,6 @@ class StatusWindow:
             "net_tx": [],
         }
         self.max_points = 90
-
         self.command_history = deque(maxlen=6)
 
         self._angle = 0.0
@@ -76,6 +81,7 @@ class StatusWindow:
         self._mic_phase = 0.0
 
         self._build_layout()
+        self._update_volume_label(self.voice_volume_var.get())
         self.root.bind("<Configure>", self._on_resize)
 
         self._set_fullscreen_overlay()
@@ -120,13 +126,7 @@ class StatusWindow:
         self.canvas.pack(fill="both", expand=True)
 
         self.top_bar = tk.Frame(self.canvas, bg=self.BG)
-        self.canvas.create_window(
-            24,
-            18,
-            anchor="nw",
-            window=self.top_bar,
-            tags="top_bar",
-        )
+        self.canvas.create_window(24, 18, anchor="nw", window=self.top_bar, tags="top_bar")
 
         self.title_label = tk.Label(
             self.top_bar,
@@ -173,14 +173,37 @@ class StatusWindow:
         )
         self.minimize_button.pack(anchor="e")
 
+        self.header_frame = tk.Frame(self.right_panel, bg=self.PANEL)
+        self.header_frame.pack(fill="x", padx=16, pady=(16, 10))
+
         self.right_title = tk.Label(
-            self.right_panel,
+            self.header_frame,
             text="JARVIS STATUS",
             bg=self.PANEL,
             fg=self.CYAN,
             font=("Segoe UI", 16, "bold"),
         )
-        self.right_title.pack(anchor="w", padx=16, pady=(16, 10))
+        self.right_title.pack(side="left", anchor="w")
+
+        self.settings_button = tk.Button(
+            self.header_frame,
+            text="\u2699",
+            command=self._toggle_settings_menu,
+            bg=self.PANEL_2,
+            fg=self.CYAN,
+            activebackground=self.LINE,
+            activeforeground=self.TEXT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=self.LINE,
+            font=("Consolas", 9, "bold"),
+            width=4,
+            cursor="hand2",
+        )
+        self.settings_button.pack(side="right")
+
+        self.settings_panel = self._create_settings_panel()
 
         self.clock_label = tk.Label(
             self.right_panel,
@@ -197,7 +220,6 @@ class StatusWindow:
         self.block_core = self._make_info_block("CORE", "ONLINE")
         self.block_audio = self._make_info_block("AUDIO LINK", "STANDBY")
 
-        # микрофон справа под статусами
         self.mic_frame = tk.Frame(
             self.right_panel,
             bg=self.PANEL_2,
@@ -277,10 +299,103 @@ class StatusWindow:
         value_label.pack(anchor="w", padx=10, pady=(2, 8))
         return value_label
 
+    def _create_settings_panel(self) -> tk.Frame:
+        panel = tk.Frame(self.right_panel, bg=self.LINE, highlightthickness=0, bd=0)
+
+        frame = tk.Frame(
+            panel,
+            bg=self.PANEL,
+            highlightbackground=self.CYAN_SOFT,
+            highlightthickness=1,
+            padx=14,
+            pady=14,
+        )
+        frame.pack(fill="both", expand=True)
+
+        tk.Label(
+            frame,
+            text="SETTINGS",
+            bg=self.PANEL,
+            fg=self.CYAN,
+            font=("Segoe UI", 12, "bold"),
+        ).pack(anchor="w")
+
+        tk.Label(
+            frame,
+            text="Jarvis voice volume",
+            bg=self.PANEL,
+            fg=self.TEXT,
+            font=("Segoe UI", 10, "bold"),
+        ).pack(anchor="w", pady=(12, 4))
+
+        self.volume_scale = tk.Scale(
+            frame,
+            from_=0,
+            to=100,
+            orient="horizontal",
+            variable=self.voice_volume_var,
+            command=self._on_volume_slider_change,
+            bg=self.PANEL,
+            fg=self.TEXT,
+            troughcolor=self.LINE,
+            highlightthickness=0,
+            activebackground=self.CYAN,
+            bd=0,
+            length=220,
+            showvalue=False,
+        )
+        self.volume_scale.pack(anchor="w")
+
+        tk.Label(
+            frame,
+            textvariable=self.voice_volume_text_var,
+            bg=self.PANEL,
+            fg=self.CYAN_SOFT,
+            font=("Consolas", 10, "bold"),
+        ).pack(anchor="w", pady=(6, 0))
+
+        return panel
+
+    def _toggle_settings_menu(self) -> None:
+        if self._settings_menu_visible:
+            self._hide_settings_menu()
+            return
+        self._show_settings_menu()
+
+    def _show_settings_menu(self) -> None:
+        self._settings_menu_visible = True
+        self.settings_panel.place(
+            relx=1.0,
+            x=-16,
+            y=58,
+            anchor="ne",
+            width=260,
+        )
+        self.settings_panel.lift()
+
+    def _hide_settings_menu(self) -> None:
+        self._settings_menu_visible = False
+        self.settings_panel.place_forget()
+
+    def _handle_global_click(self, event: tk.Event) -> None:
+        if not self._settings_menu_visible:
+            return
+
+        widget = event.widget
+        while widget is not None:
+            if widget == self.settings_panel or widget == self.settings_button:
+                return
+            widget = getattr(widget, "master", None)
+
+        self._hide_settings_menu()
+
     def _on_resize(self, _event=None) -> None:
         self.canvas.coords("top_bar", 24, 18)
         canvas_width = max(self.canvas.winfo_width(), 200)
         self.canvas.coords("window_controls", canvas_width - 24, 18)
+
+        if self._settings_menu_visible:
+            self._show_settings_menu()
 
     def _set_fullscreen_overlay(self) -> None:
         try:
@@ -344,7 +459,6 @@ class StatusWindow:
 
         self.status_var.set(status_upper)
         self.detail_var.set(detail)
-
         self.block_status.configure(text=status_upper)
         self.block_detail.configure(text=detail)
 
@@ -388,8 +502,7 @@ class StatusWindow:
 
     def _add_user_command_ui(self, text: str) -> None:
         stamp = time.strftime("%H:%M:%S")
-        line = f"[{stamp}] {text}"
-        self.command_history.appendleft(line)
+        self.command_history.appendleft(f"[{stamp}] {text}")
         self._push_log(f"USER: {text}")
 
     def _push_log(self, text: str) -> None:
@@ -447,30 +560,12 @@ class StatusWindow:
 
     def _draw_grid(self, width: int, height: int) -> None:
         step = 37
-
         for x in range(0, width, step):
-            self.canvas.create_line(
-                x, 0, x, height,
-                fill=self.GRID,
-                width=1,
-                tags="hud",
-            )
-
+            self.canvas.create_line(x, 0, x, height, fill=self.GRID, width=1, tags="hud")
         for y in range(0, height, step):
-            self.canvas.create_line(
-                0, y, width, y,
-                fill=self.GRID,
-                width=1,
-                tags="hud",
-            )
-
+            self.canvas.create_line(0, y, width, y, fill=self.GRID, width=1, tags="hud")
         for y in range(0, height, 148):
-            self.canvas.create_line(
-                0, y, width, y,
-                fill="#10344d",
-                width=1,
-                tags="hud",
-            )
+            self.canvas.create_line(0, y, width, y, fill="#10344D", width=1, tags="hud")
 
     def _draw_chart_panel(self, width: int, height: int) -> None:
         left = 28
@@ -487,7 +582,6 @@ class StatusWindow:
             font=("Segoe UI", 18, "bold"),
             tags="hud",
         )
-
         self.canvas.create_text(
             left,
             82,
@@ -500,7 +594,6 @@ class StatusWindow:
 
         col_gap = 16
         row_gap = 16
-
         chart_w = (right - left - col_gap) / 2
         chart_h = (bottom - top - row_gap) / 3
 
@@ -519,17 +612,12 @@ class StatusWindow:
             y2 = y1 + chart_h
             self._draw_single_chart(x1, y1, x2, y2, title, values, value_text)
 
-        x1 = left + 1 * (chart_w + col_gap)
-        y1 = top + 2 * (chart_h + row_gap)
+        x1 = left + chart_w + col_gap
+        y1 = top + (chart_h + row_gap) * 2
         x2 = x1 + chart_w
         y2 = y1 + chart_h
 
-        self.canvas.create_rectangle(
-            x1, y1, x2, y2,
-            outline=self.LINE,
-            width=1,
-            tags="hud",
-        )
+        self.canvas.create_rectangle(x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
         self.canvas.create_text(
             x1 + 14,
             y1 + 14,
@@ -577,13 +665,7 @@ class StatusWindow:
         values: list[float],
         value_text: str,
     ) -> None:
-        self.canvas.create_rectangle(
-            x1, y1, x2, y2,
-            outline=self.LINE,
-            width=1,
-            tags="hud",
-        )
-
+        self.canvas.create_rectangle(x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
         self.canvas.create_text(
             x1 + 12,
             y1 + 10,
@@ -593,7 +675,6 @@ class StatusWindow:
             font=("Consolas", 10, "bold"),
             tags="hud",
         )
-
         self.canvas.create_text(
             x2 - 12,
             y1 + 10,
@@ -611,12 +692,7 @@ class StatusWindow:
 
         for i in range(1, 4):
             yy = plot_top + (plot_bottom - plot_top) * i / 4
-            self.canvas.create_line(
-                plot_left, yy, plot_right, yy,
-                fill="#10344d",
-                width=1,
-                tags="hud",
-            )
+            self.canvas.create_line(plot_left, yy, plot_right, yy, fill="#10344D", width=1, tags="hud")
 
         if len(values) < 2:
             return
@@ -624,32 +700,18 @@ class StatusWindow:
         points = []
         fill_points = [plot_left, plot_bottom]
         count = len(values)
-        width = plot_right - plot_left
-        height = plot_bottom - plot_top
+        plot_width = plot_right - plot_left
+        plot_height = plot_bottom - plot_top
 
         for idx, value in enumerate(values):
-            x = plot_left + (width * idx / max(count - 1, 1))
-            y = plot_bottom - (max(0.0, min(value, 100.0)) / 100.0) * height
+            x = plot_left + (plot_width * idx / max(count - 1, 1))
+            y = plot_bottom - (max(0.0, min(value, 100.0)) / 100.0) * plot_height
             points.extend([x, y])
             fill_points.extend([x, y])
 
         fill_points.extend([plot_right, plot_bottom])
-
-        self.canvas.create_polygon(
-            *fill_points,
-            fill="#0a3852",
-            outline="",
-            stipple="gray25",
-            tags="hud",
-        )
-
-        self.canvas.create_line(
-            *points,
-            fill=self.CYAN,
-            width=2,
-            smooth=True,
-            tags="hud",
-        )
+        self.canvas.create_polygon(*fill_points, fill="#0A3852", outline="", stipple="gray25", tags="hud")
+        self.canvas.create_line(*points, fill=self.CYAN, width=2, smooth=True, tags="hud")
 
     def _draw_command_history(self, width: int, height: int) -> None:
         x1 = 28
@@ -657,13 +719,7 @@ class StatusWindow:
         y2 = height - 24
         y1 = y2 - 112
 
-        self.canvas.create_rectangle(
-            x1, y1, x2, y2,
-            outline=self.LINE,
-            width=1,
-            tags="hud",
-        )
-
+        self.canvas.create_rectangle(x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
         self.canvas.create_text(
             x1 + 14,
             y1 + 12,
@@ -679,176 +735,124 @@ class StatusWindow:
                 x1 + 14,
                 y1 + 42,
                 anchor="nw",
-                text="История пока пуста",
+                text="waiting for voice commands...",
                 fill=self.TEXT_DIM,
                 font=("Consolas", 10),
                 tags="hud",
             )
             return
 
-        for idx, item in enumerate(list(self.command_history)[:5]):
+        for idx, line in enumerate(self.command_history):
             self.canvas.create_text(
                 x1 + 14,
-                y1 + 38 + idx * 18,
+                y1 + 42 + idx * 14,
                 anchor="nw",
-                text=item[:120],
+                text=line[:120],
                 fill=self.TEXT if idx == 0 else self.TEXT_DIM,
                 font=("Consolas", 9),
                 tags="hud",
             )
 
-    def _draw_center_pulse(self, width: int, height: int) -> None:
-        cx = width * 0.50
-        cy = height * 0.52
-        pulse = (math.sin(self._pulse_phase) + 1.0) / 2.0
-        pulse_strength = 8 + 22 * self._pulse_level * pulse
-
-        r1 = 34 + pulse_strength * 0.35
-        r2 = 58 + pulse_strength * 0.55
-        r3 = 92 + pulse_strength * 0.85
-
-        self.canvas.create_oval(
-            cx - r3, cy - r3, cx + r3, cy + r3,
-            outline="#0c5c87",
-            width=2,
-            tags="hud",
-        )
-        self.canvas.create_oval(
-            cx - r2, cy - r2, cx + r2, cy + r2,
-            outline=self.CYAN_SOFT,
-            width=2,
-            tags="hud",
-        )
-        self.canvas.create_oval(
-            cx - r1, cy - r1, cx + r1, cy + r1,
-            outline=self.PULSE,
-            width=3,
-            tags="hud",
-        )
-
-        arc_extent = 35 + 120 * self._pulse_level
-        self.canvas.create_arc(
-            cx - r3 - 10,
-            cy - r3 - 10,
-            cx + r3 + 10,
-            cy + r3 + 10,
-            start=self._angle * 2,
-            extent=arc_extent,
-            style="arc",
-            outline=self.ALERT,
-            width=4,
-            tags="hud",
-        )
-
-        self.canvas.create_text(
-            cx,
-            cy,
-            text="J",
-            fill=self.TEXT,
-            font=("Segoe UI", 30, "bold"),
-            tags="hud",
-        )
-
     def _draw_mic_icon(self) -> None:
-        w = max(self.mic_canvas.winfo_width(), 200)
-        h = max(self.mic_canvas.winfo_height(), 100)
+        width = max(self.mic_canvas.winfo_width(), 260)
+        height = max(self.mic_canvas.winfo_height(), 110)
+        center_x = width / 2
+        center_y = height / 2 - 8
 
-        cx = w / 2
-        cy = h / 2 + 6
-
-        pulse = (math.sin(self._mic_phase) + 1.0) / 2.0
-        amp = 6 + pulse * 10 * self._pulse_level
-
-        ring_r = 34 + amp
+        ring_radius = 24 + math.sin(self._pulse_phase) * 2.5
+        glow_radius = ring_radius + 18 + self._pulse_level * 8
 
         self.mic_canvas.create_oval(
-            cx - ring_r,
-            cy - ring_r,
-            cx + ring_r,
-            cy + ring_r,
-            outline="#0f4a6d",
+            center_x - glow_radius,
+            center_y - glow_radius,
+            center_x + glow_radius,
+            center_y + glow_radius,
+            outline="",
+            fill="#0B3246",
+        )
+        self.mic_canvas.create_oval(
+            center_x - ring_radius,
+            center_y - ring_radius,
+            center_x + ring_radius,
+            center_y + ring_radius,
+            outline=self.CYAN,
             width=2,
         )
 
+        body_w = 16
+        body_h = 30
         self.mic_canvas.create_oval(
-            cx - 16,
-            cy - 28,
-            cx + 16,
-            cy + 6,
+            center_x - body_w,
+            center_y - body_h,
+            center_x + body_w,
+            center_y + body_h,
             outline=self.CYAN,
-            width=3,
+            width=2,
         )
-
-        self.mic_canvas.create_line(
-            cx,
-            cy + 6,
-            cx,
-            cy + 26,
-            fill=self.CYAN,
-            width=3,
-        )
-
+        self.mic_canvas.create_line(center_x, center_y + body_h, center_x, center_y + body_h + 18, fill=self.CYAN, width=2)
         self.mic_canvas.create_arc(
-            cx - 24,
-            cy - 8,
-            cx + 24,
-            cy + 28,
+            center_x - 20,
+            center_y + 4,
+            center_x + 20,
+            center_y + 42,
             start=200,
             extent=140,
             style="arc",
-            outline=self.CYAN_SOFT,
-            width=3,
+            outline=self.CYAN,
+            width=2,
         )
-
         self.mic_canvas.create_line(
-            cx - 18,
-            cy + 32,
-            cx + 18,
-            cy + 32,
+            center_x - 14,
+            center_y + body_h + 18,
+            center_x + 14,
+            center_y + body_h + 18,
             fill=self.CYAN,
-            width=3,
+            width=2,
         )
 
-        for i in range(5):
-            x = cx - 52 + i * 26
-            bar_h = 8 + abs(math.sin(self._mic_phase + i * 0.7)) * (10 + 20 * self._pulse_level)
+        for idx in range(10):
+            amplitude = 10 + idx * 2
+            phase = self._mic_phase + idx * 0.25
+            points = []
+            for step in range(0, width, 8):
+                y = height - 24 - math.sin(phase + step / 28) * amplitude * (0.25 + self._pulse_level * 0.55)
+                points.extend([step, y])
             self.mic_canvas.create_line(
-                x,
-                h - 18,
-                x,
-                h - 18 - bar_h,
-                fill=self.ALERT if i == 2 else self.CYAN_SOFT,
-                width=3,
+                *points,
+                fill=self.CYAN if idx == 5 else "#1F5F7A",
+                smooth=True,
+                width=1,
             )
 
+    def _on_volume_slider_change(self, value: str) -> None:
+        volume = max(0, min(int(float(value)), 100))
+        self.voice_volume_var.set(volume)
+        self._update_volume_label(volume)
+        if self._on_voice_volume_change is not None:
+            self._on_voice_volume_change(volume)
+
+    def _update_volume_label(self, volume: int) -> None:
+        self.voice_volume_text_var.set(f"OUTPUT LEVEL: {volume}%")
+
     def _cpu_label(self) -> str:
-        if not self.stats_history["cpu"]:
-            return "--"
-        return f"{self.stats_history['cpu'][-1]:.0f}%"
+        value = self.stats_history["cpu"][-1] if self.stats_history["cpu"] else 0.0
+        return f"{value:5.1f}%"
 
     def _ram_label(self) -> str:
-        if not self.stats_history["ram"]:
-            return "--"
-        return f"{self.stats_history['ram'][-1]:.0f}%"
+        value = self.stats_history["ram"][-1] if self.stats_history["ram"] else 0.0
+        return f"{value:5.1f}%"
 
     def _disk_label(self) -> str:
-        if not self.stats_history["disk"]:
-            return "--"
-        return f"{self.stats_history['disk'][-1]:.0f}%"
+        value = self.stats_history["disk"][-1] if self.stats_history["disk"] else 0.0
+        return f"{value:5.1f}%"
 
     def _net_rx_label(self) -> str:
-        if not self.stats_history["net_rx"]:
-            return "--"
-        return f"{self.stats_history['net_rx'][-1] * 20:.0f} KB/s"
+        value = self.stats_history["net_rx"][-1] if self.stats_history["net_rx"] else 0.0
+        return f"{value:5.1f}%"
 
     def _net_tx_label(self) -> str:
-        if not self.stats_history["net_tx"]:
-            return "--"
-        return f"{self.stats_history['net_tx'][-1] * 20:.0f} KB/s"
-
-    def start_in_thread(self) -> None:
-        thread = threading.Thread(target=self.root.mainloop, daemon=True)
-        thread.start()
+        value = self.stats_history["net_tx"][-1] if self.stats_history["net_tx"] else 0.0
+        return f"{value:5.1f}%"
 
     def run(self) -> None:
         self.root.mainloop()

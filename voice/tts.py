@@ -21,10 +21,12 @@ from core.config import (
 
 
 class TextToSpeech:
-    def __init__(self) -> None:
+    def __init__(self, volume: int = 80) -> None:
         self.engine = pyttsx3.init()
         self._audio_player_available = False
+        self._volume = 0.8
         self._configure_fallback_voice()
+        self.set_volume(volume)
 
     def _configure_fallback_voice(self) -> None:
         voices = self.engine.getProperty("voices")
@@ -36,6 +38,7 @@ class TextToSpeech:
                 break
 
         self.engine.setProperty("rate", PYTTSX3_RATE)
+        self.engine.setProperty("volume", self._volume)
 
     def _init_audio_player(self) -> None:
         if self._audio_player_available:
@@ -47,6 +50,17 @@ class TextToSpeech:
 
         pygame.mixer.init()
         self._audio_player_available = True
+
+    def set_volume(self, volume: int) -> None:
+        normalized = max(0.0, min(float(volume) / 100.0, 1.0))
+        self._volume = normalized
+        try:
+            self.engine.setProperty("volume", self._volume)
+        except Exception:
+            pass
+
+    def get_volume(self) -> int:
+        return int(round(self._volume * 100))
 
     def speak(self, text: str) -> None:
         prepared_text = self._prepare_text(text)
@@ -121,6 +135,7 @@ class TextToSpeech:
 
     def _play_audio_file(self, file_path: Path) -> None:
         self._init_audio_player()
+        pygame.mixer.music.set_volume(self._volume)
         pygame.mixer.music.load(str(file_path))
         pygame.mixer.music.play()
 

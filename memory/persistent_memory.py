@@ -8,6 +8,7 @@ from typing import Any
 class PersistentMemory:
     def __init__(self, file_path: Path) -> None:
         self.file_path = file_path
+        self.file_path.parent.mkdir(parents=True, exist_ok=True)
         self.data: dict[str, Any] = {}
         self._load()
 

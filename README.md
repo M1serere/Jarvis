@@ -132,7 +132,7 @@ Tracks:
 Includes:
 
 * file-based logs
-* automatic cleanup (~6 months)
+* automatic weekly cleanup of expired logs (~6 months retention)
 
 ---
 

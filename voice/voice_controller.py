@@ -38,7 +38,7 @@ class VoiceController:
 
         try:
             self.ui.set_status("Активирован", "Wake word detected")
-            self.tts.speak("Да, госпожа?")
+            self.tts.speak("Чем могу помочь, госпожа?")
             self.run_once()
         finally:
             self.ui.set_status("Готов", "Ожидание wake word")

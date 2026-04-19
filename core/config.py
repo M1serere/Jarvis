@@ -60,3 +60,19 @@ LOG_RETENTION_DAYS = 180
 LOG_FILE_NAME = "jarvis.log"
 
 UI_WINDOW_TITLE = "Jarvis Status"
+
+TTS_PROVIDER = os.getenv("JARVIS_TTS_PROVIDER", "edge").lower()
+
+# Основной голос для edge-tts.
+# Попробуй сначала Dmitry. Если не понравится — потом можно быстро поменять.
+EDGE_TTS_VOICE = os.getenv("JARVIS_EDGE_TTS_VOICE", "ru-RU-DmitryNeural")
+
+# Для "вайба Джарвиса" лучше чуть медленнее и немного ниже по тону.
+EDGE_TTS_RATE = os.getenv("JARVIS_EDGE_TTS_RATE", "-8%")
+EDGE_TTS_PITCH = os.getenv("JARVIS_EDGE_TTS_PITCH", "-8Hz")
+
+# Локальный fallback, если интернет/edge-tts недоступен
+PYTTSX3_RATE = int(os.getenv("JARVIS_PYTTSX3_RATE", "170"))
+
+TTS_TEMP_DIR = BASE_DIR / "temp_tts"
+TTS_TEMP_DIR.mkdir(exist_ok=True)

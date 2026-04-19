@@ -4,7 +4,7 @@ from voice.wake_word import WakeWordListener
 
 def main() -> None:
     voice_controller = VoiceController()
-    wake_listener = WakeWordListener(keyword="jarvis")
+    wake_listener = WakeWordListener(keywords=["джарвис", "jarvis"])
 
     print("Jarvis voice mode is running.")
     print("Say 'Jarvis' to activate the assistant.")

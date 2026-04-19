@@ -1,24 +1,26 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 import speech_recognition as sr
 
 
 class WakeWordListener:
     def __init__(
         self,
-        keyword: str = "jarvis",
-        language: str = "en-US",
+        keywords: list[str] | None = None,
+        language: str = "ru-RU",
         timeout: float = 1.5,
         phrase_time_limit: float = 2.5,
     ) -> None:
-        self.keyword = keyword.lower()
+        self.keywords = [k.lower() for k in (keywords or ["джарвис", "jarvis"])]
         self.language = language
         self.timeout = timeout
         self.phrase_time_limit = phrase_time_limit
         self.recognizer = sr.Recognizer()
 
-    def listen(self, callback) -> None:
-        print("Listening for wake word 'Jarvis'...")
+    def listen(self, callback: Callable[[], None]) -> None:
+        print(f"Listening for wake words: {', '.join(self.keywords)}")
 
         with sr.Microphone() as source:
             self.recognizer.adjust_for_ambient_noise(source, duration=1)
@@ -38,9 +40,10 @@ class WakeWordListener:
                         audio,
                         language=self.language,
                     ).lower()
+                    print(f"Wake recognized: {text}")
                 except (sr.UnknownValueError, sr.RequestError):
                     continue
 
-                if self.keyword in text:
+                if any(keyword in text for keyword in self.keywords):
                     print("Wake word detected!")
                     callback()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from contextlib import suppress
 from collections.abc import Callable
 import re
 
@@ -25,19 +26,26 @@ class WakeWordListener:
         self.debug = debug
         self.recognizer = sr.Recognizer()
 
+    @staticmethod
+    def _close_microphone(source: sr.Microphone) -> None:
+        with suppress(OSError, AttributeError):
+            source.__exit__(None, None, None)
+
     def listen(self, callback: Callable[[], None]) -> None:
         print(f"Listening for wake words: {', '.join(self.keywords)}")
 
         while True:
             should_activate = False
+            source = sr.Microphone()
 
-            with sr.Microphone() as source:
-                self.recognizer.adjust_for_ambient_noise(source, duration=1)
+            try:
+                entered_source = source.__enter__()
+                self.recognizer.adjust_for_ambient_noise(entered_source, duration=1)
 
                 while True:
                     try:
                         audio = self.recognizer.listen(
-                            source,
+                            entered_source,
                             timeout=self.timeout,
                             phrase_time_limit=self.phrase_time_limit,
                         )
@@ -58,6 +66,12 @@ class WakeWordListener:
                         print("Wake word detected!")
                         should_activate = True
                         break
+            except OSError as exc:
+                if self.debug:
+                    print(f"Wake microphone error: {exc}")
+                continue
+            finally:
+                self._close_microphone(source)
 
             if should_activate:
                 callback()

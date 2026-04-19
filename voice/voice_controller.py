@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+import re
 import threading
 
 from core import autostart
@@ -14,6 +15,13 @@ from voice.tts import TextToSpeech
 
 
 class VoiceController:
+    SLEEP_COMMANDS = {
+        "отдохни",
+        "можешь отдохнуть",
+        "джарвис отдохни",
+        "джарвис можешь отдохнуть",
+    }
+
     def __init__(self) -> None:
         self.settings_store = SettingsStore()
         self.settings = self.settings_store.load()
@@ -34,6 +42,7 @@ class VoiceController:
             work_time_provider=self.work_timer.get_elapsed_seconds,
         )
         self._activation_lock = threading.Lock()
+        self._is_awake = False
         self._sync_autostart()
 
     def set_voice_volume(self, volume: int) -> None:
@@ -96,33 +105,68 @@ class VoiceController:
         print("[TIMER] Пора сделать перерыв")
         self.ui.set_status("Напоминание", "Пора сделать перерыв")
         self.tts.speak(reminder)
-        self.ui.set_status("Готов", "Ожидание wake word")
+        self._set_idle_status()
 
-    def run_once(self) -> None:
+    def _set_idle_status(self) -> None:
+        detail = "Ожидание команды" if self._is_awake else "Ожидание wake word"
+        self.ui.set_status("Готов", detail)
+
+    @staticmethod
+    def _normalize_command(text: str) -> str:
+        normalized = re.sub(r"[^\w\s-]", " ", text.lower())
+        return " ".join(normalized.split())
+
+    def _is_sleep_command(self, text: str) -> bool:
+        return self._normalize_command(text) in self.SLEEP_COMMANDS
+
+    def run_once(self) -> bool:
         self.ui.set_status("Слушает", "Жду голосовую команду")
-        user_text = self.stt.listen()
+        user_text = self.stt.listen(timeout=None, phrase_time_limit=None)
         
         if user_text and self.ui:
             self.ui.add_user_command(user_text)
 
-        if not user_text or user_text.startswith("Ошибка STT:"):
+        if not user_text:
             self.ui.set_status("Готов", "Не удалось распознать речь")
             self.tts.speak("Я не расслышал, повтори.")
-            return
+            self._set_idle_status()
+            return True
+
+        if user_text.startswith("Ошибка STT:"):
+            self.ui.set_status("Готов", "Ошибка распознавания речи")
+            self.tts.speak("Возникла ошибка распознавания речи.")
+            self._set_idle_status()
+            return True
+
+        if self._is_sleep_command(user_text):
+            self._is_awake = False
+            self.ui.set_status("Готов", "Переход в режим ожидания")
+            self.tts.speak("Хорошо. Буду ждать обращения по ключевому слову.")
+            self._set_idle_status()
+            return False
 
         response = self.orchestrator.handle_user_input(user_text)
         self.ui.set_status("Говорит", "Озвучиваю ответ")
         self.tts.speak(response.response_text)
-        self.ui.set_status("Готов", "Ожидание команды")
+        self._set_idle_status()
+        return True
 
     def handle_wake(self) -> None:
         if not self._activation_lock.acquire(blocking=False):
             return
 
         try:
+            if self._is_awake:
+                self._set_idle_status()
+                return
+
+            self._is_awake = True
             self.ui.set_status("Активирован", "Wake word detected")
             self.tts.speak("Чем могу помочь, госпожа?")
-            self.run_once()
+
+            while self._is_awake:
+                if not self.run_once():
+                    break
         finally:
-            self.ui.set_status("Готов", "Ожидание wake word")
+            self._set_idle_status()
             self._activation_lock.release()

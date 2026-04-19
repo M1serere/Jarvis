@@ -1,9 +1,11 @@
 from __future__ import annotations
 
-from pydoc import text
+import random
 import threading
 
+from core.config import WORK_TIMER_SECONDS
 from core.orchestrator import JarvisOrchestrator
+from core.work_timer import WorkTimer
 from ui.status_window import StatusWindow
 from voice.stt import SpeechToText
 from voice.tts import TextToSpeech
@@ -14,8 +16,30 @@ class VoiceController:
         self.ui = StatusWindow()
         self.stt = SpeechToText()
         self.tts = TextToSpeech()
-        self.orchestrator = JarvisOrchestrator(status_ui=self.ui)
+        self.work_timer = WorkTimer(
+            notify_callback=self.notify_break,
+            work_limit_seconds=WORK_TIMER_SECONDS,
+        )
+        self.orchestrator = JarvisOrchestrator(
+            status_ui=self.ui,
+            work_time_provider=self.work_timer.get_elapsed_seconds,
+        )
         self._activation_lock = threading.Lock()
+
+    def start_work_timer(self) -> None:
+        self.work_timer.start()
+
+    def notify_break(self) -> None:
+        reminder_options = [
+            "Госпожа, вы работаете больше трёх часов. Не хотите ли сделать перерыв?",
+            "Госпожа, вы уже работаете больше трёх часов. Возможно, пора немного отдохнуть.",
+            "Госпожа, прошло уже более трёх часов работы. Может быть, стоит сделать небольшой перерыв?",
+        ]
+        reminder = random.choice(reminder_options)
+        print("[TIMER] Пора сделать перерыв")
+        self.ui.set_status("Напоминание", "Пора сделать перерыв")
+        self.tts.speak(reminder)
+        self.ui.set_status("Готов", "Ожидание wake word")
 
     def run_once(self) -> None:
         self.ui.set_status("Слушает", "Жду голосовую команду")

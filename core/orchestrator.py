@@ -21,9 +21,10 @@ class JarvisOrchestrator:
 
     MUSIC_YOUTUBE_WORDS = {"ютуб", "youtube", "на ютубе", "в ютубе"}
 
-    def __init__(self, status_ui=None) -> None:
+    def __init__(self, status_ui=None, work_time_provider=None) -> None:
         self.logger = setup_logger()
         self.status_ui = status_ui
+        self.work_time_provider = work_time_provider
         self.brain = Brain()
         self.memory = SessionMemory()
         self.tools = ToolRegistry()
@@ -138,6 +139,10 @@ class JarvisOrchestrator:
                 raw_decision=empty_decision(),
                 approved=True,
             )
+
+        work_time_response = self._handle_work_time_request(lowered_text)
+        if work_time_response is not None:
+            return work_time_response
 
         music_response = self._handle_explicit_music_request(text)
         if music_response is not None:
@@ -436,3 +441,7 @@ class JarvisOrchestrator:
 
     def _is_youtube_source(self, text: str) -> bool:
         return any(word in text for word in self.MUSIC_YOUTUBE_WORDS)
+    
+    def notify_break(self):
+        print("[TIMER] Пора сделать перерыв")
+        self.tts.speak("Ты работаешь уже довольно долго. Пора сделать небольшой перерыв.")

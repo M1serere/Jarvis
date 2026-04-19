@@ -18,11 +18,13 @@ def main() -> None:
         daemon=True,
     )
     listener_thread.start()
+    voice_controller.start_work_timer()
 
     try:
         voice_controller.ui.run()
     except KeyboardInterrupt:
         print("\nJarvis stopped.")
+
 
 
 if __name__ == "__main__":

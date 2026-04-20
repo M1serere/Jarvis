@@ -85,10 +85,7 @@ class StatusWindow:
         self.max_points = 90
         self.command_history = deque(maxlen=6)
 
-        self._angle = 0.0
-        self._pulse_phase = 0.0
         self._pulse_level = 0.25
-        self._mic_phase = 0.0
 
         self._build_layout()
         self._update_volume_label(self.voice_volume_var.get())
@@ -677,10 +674,6 @@ class StatusWindow:
         self._draw_command_history(width, height)
         self._draw_mic_icon()
 
-        self._angle += 2.0
-        self._pulse_phase += 0.18
-        self._mic_phase += 0.24
-
         self.root.after(80, self._animate)
 
     def _draw_grid(self, width: int, height: int) -> None:
@@ -882,72 +875,122 @@ class StatusWindow:
         width = max(self.mic_canvas.winfo_width(), 260)
         height = max(self.mic_canvas.winfo_height(), 110)
         center_x = width / 2
-        center_y = height / 2 - 8
+        center_y = height / 2 - 13
+        accent = "#241CFF"
+        accent_soft = "#4D46FF"
+        phase = time.monotonic() * 3.2
 
-        ring_radius = 24 + math.sin(self._pulse_phase) * 2.5
-        glow_radius = ring_radius + 18 + self._pulse_level * 8
+        self.mic_canvas.create_rectangle(0, 0, width, height, outline="", fill=self.PANEL)
+
+        capsule_w = 26
+        capsule_h = 41
+        stem_h = 24
+        base_w = 26
+        outline_w = 3
+
+        capsule_left = center_x - capsule_w / 2
+        capsule_top = center_y - capsule_h / 2
+        capsule_right = center_x + capsule_w / 2
+        capsule_bottom = center_y + capsule_h / 2
 
         self.mic_canvas.create_oval(
-            center_x - glow_radius,
-            center_y - glow_radius,
-            center_x + glow_radius,
-            center_y + glow_radius,
+            capsule_left,
+            capsule_top,
+            capsule_right,
+            capsule_bottom,
             outline="",
-            fill="#0B3246",
+            fill=accent,
         )
-        self.mic_canvas.create_oval(
-            center_x - ring_radius,
-            center_y - ring_radius,
-            center_x + ring_radius,
-            center_y + ring_radius,
-            outline=self.CYAN,
-            width=2,
+        self.mic_canvas.create_rectangle(
+            capsule_left,
+            center_y,
+            capsule_right,
+            capsule_bottom,
+            outline="",
+            fill=accent,
         )
 
-        body_w = 16
-        body_h = 30
-        self.mic_canvas.create_oval(
-            center_x - body_w,
-            center_y - body_h,
-            center_x + body_w,
-            center_y + body_h,
-            outline=self.CYAN,
-            width=2,
-        )
-        self.mic_canvas.create_line(center_x, center_y + body_h, center_x, center_y + body_h + 18, fill=self.CYAN, width=2)
         self.mic_canvas.create_arc(
-            center_x - 20,
-            center_y + 4,
-            center_x + 20,
-            center_y + 42,
-            start=200,
-            extent=140,
+            center_x - 22,
+            center_y + 1,
+            center_x + 22,
+            center_y + 35,
+            start=180,
+            extent=180,
             style="arc",
-            outline=self.CYAN,
-            width=2,
+            outline=accent,
+            width=outline_w,
         )
         self.mic_canvas.create_line(
-            center_x - 14,
-            center_y + body_h + 18,
-            center_x + 14,
-            center_y + body_h + 18,
-            fill=self.CYAN,
-            width=2,
+            center_x,
+            capsule_bottom + 2,
+            center_x,
+            capsule_bottom + stem_h,
+            fill=accent,
+            width=outline_w,
+        )
+        self.mic_canvas.create_rectangle(
+            center_x - 2,
+            capsule_bottom + 2,
+            center_x + 2,
+            capsule_bottom + stem_h,
+            outline="",
+            fill=accent,
+        )
+        self.mic_canvas.create_line(
+            center_x - base_w / 2,
+            capsule_bottom + stem_h,
+            center_x + base_w / 2,
+            capsule_bottom + stem_h,
+            fill=accent,
+            width=outline_w,
+        )
+        self.mic_canvas.create_rectangle(
+            center_x - base_w / 2,
+            capsule_bottom + stem_h - 1,
+            center_x + base_w / 2,
+            capsule_bottom + stem_h + 2,
+            outline="",
+            fill=accent,
         )
 
-        for idx in range(10):
-            amplitude = 10 + idx * 2
-            phase = self._mic_phase + idx * 0.25
+        def draw_wave_cluster(x_center: float, mirrored: bool, phase_shift: float) -> None:
+            bars = 11
+            bar_spacing = 4.8
+            max_bar_h = 39
+            min_bar_h = 10
+            base_y = center_y
+
+            for idx in range(bars):
+                dist = abs(idx - (bars - 1) / 2)
+                envelope = max(0.0, 1.0 - dist / 5.5)
+                anim = 0.55 + 0.45 * math.sin(phase + phase_shift + idx * 0.55)
+                bar_h = min_bar_h + (max_bar_h - min_bar_h) * envelope * anim
+                x = x_center + (idx - (bars - 1) / 2) * bar_spacing
+                y1 = base_y - bar_h / 2
+                y2 = base_y + bar_h / 2
+                color = accent if envelope > 0.5 else accent_soft
+                self.mic_canvas.create_line(x, y1, x, y2, fill=color, width=2)
+
             points = []
-            for step in range(0, width, 8):
-                y = height - 24 - math.sin(phase + step / 28) * amplitude * (0.25 + self._pulse_level * 0.55)
-                points.extend([step, y])
-            self.mic_canvas.create_line(
-                *points,
-                fill=self.CYAN if idx == 5 else "#1F5F7A",
-                smooth=True,
-                width=1,
-            )
+            lobe_w = 32
+            steps = 18
+            for step in range(steps + 1):
+                t = step / steps
+                local_x = t * lobe_w
+                wave = math.sin(t * math.pi) * (12 + 6 * math.sin(phase + phase_shift + t * math.pi * 2))
+                draw_x = x_center + local_x if mirrored else x_center - local_x
+                points.extend([draw_x, base_y - wave / 2])
+            for step in range(steps, -1, -1):
+                t = step / steps
+                local_x = t * lobe_w
+                wave = math.sin(t * math.pi) * (12 + 6 * math.sin(phase + phase_shift + t * math.pi * 2))
+                draw_x = x_center + local_x if mirrored else x_center - local_x
+                points.extend([draw_x, base_y + wave / 2])
+            self.mic_canvas.create_polygon(points, outline=accent, fill="", width=2, smooth=True)
+
+        draw_wave_cluster(center_x - 68, mirrored=False, phase_shift=0.0)
+        draw_wave_cluster(center_x + 68, mirrored=True, phase_shift=1.2)
 
     def _on_volume_slider_change(self, value: str) -> None:
         volume = max(0, min(int(float(value)), 100))

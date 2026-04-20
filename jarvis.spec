@@ -19,12 +19,27 @@ for package_name in (
     "pyaudio",
     "pyttsx3",
     "speech_recognition",
+    "pystray",
+    "PIL",
+    "tkinter",
 ):
     pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(package_name)
     datas += pkg_datas
     binaries += pkg_binaries
     hiddenimports += pkg_hiddenimports
 
+hiddenimports += [
+    "tkinter",
+    "_tkinter",
+    "tkinter.ttk",
+    "tkinter.constants",
+    "tkinter.filedialog",
+    "tkinter.messagebox",
+    "tkinter.font",
+    "tkinter.scrolledtext",
+    "PIL._tkinter_finder",
+    "pystray._win32",
+]
 
 a = Analysis(
     ["main.py"],
@@ -39,6 +54,7 @@ a = Analysis(
     noarchive=False,
     optimize=0,
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(

@@ -8,6 +8,8 @@ $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BuildAssetsDir = Join-Path $ProjectRoot "build_assets"
 $InstallerDir = Join-Path $ProjectRoot "installer"
 $DistDir = Join-Path $ProjectRoot "dist"
+$RootExePath = Join-Path $DistDir "Jarvis.exe"
+$AppExePath = Join-Path $DistDir "Jarvis\\Jarvis.exe"
 $IconPath = Join-Path $BuildAssetsDir "jarvis.ico"
 $WizardImagePath = Join-Path $BuildAssetsDir "wizard.bmp"
 $WizardSmallImagePath = Join-Path $BuildAssetsDir "wizard-small.bmp"
@@ -26,6 +28,25 @@ function Get-PythonExe {
     }
 
     throw "Python not found. Install Python or create .venv first."
+}
+
+function Test-TkinterAvailable {
+    param(
+        [string]$PythonExe
+    )
+
+    & $PythonExe -c "import tkinter; import _tkinter; print('TK_OK', tkinter.TkVersion)"
+    if ($LASTEXITCODE -ne 0) {
+        throw @'
+В Python, которым собирается проект, не найден tkinter.
+Из-за этого установленный exe падает с ошибкой: No module named tkinter.
+
+Что сделать:
+1. Поставить обычный Python с python.org, а не урезанную сборку.
+2. Убедиться, что установлен Tcl/Tk.
+3. Пересоздать .venv и заново собрать проект.
+'@
+    }
 }
 
 function Ensure-BuildAssets {
@@ -113,7 +134,8 @@ function Ensure-BuildAssets {
 
 function Invoke-PyInstallerBuild {
     $pythonExe = Get-PythonExe
-
+    Test-TkinterAvailable -PythonExe $pythonExe
+    
     & $pythonExe -m pip install -r (Join-Path $ProjectRoot "requirements.txt")
     & $pythonExe -m pip install pyinstaller
     & $pythonExe -m PyInstaller --noconfirm --clean $SpecPath
@@ -137,6 +159,10 @@ function Invoke-InnoSetupBuild {
 Ensure-BuildAssets
 Invoke-PyInstallerBuild
 
+if ((Test-Path $RootExePath) -and (Test-Path $AppExePath)) {
+    Remove-Item -LiteralPath $RootExePath -Force
+}
+
 if (-not $SkipInstaller) {
     Invoke-InnoSetupBuild
 }
@@ -144,4 +170,5 @@ if (-not $SkipInstaller) {
 Write-Host ""
 Write-Host "Build finished."
 Write-Host "App folder: $DistDir\\Jarvis"
+Write-Host "App exe: $AppExePath"
 Write-Host "Installer output: $InstallerDir\\Output"

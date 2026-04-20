@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ctypes
 import time
-import tkinter as tk
 
 
 class BrowserWindowService:
@@ -14,6 +13,9 @@ class BrowserWindowService:
     VK_V = 0x56
     VK_RETURN = 0x0D
     VK_ESCAPE = 0x1B
+
+    CF_UNICODETEXT = 13
+    GMEM_MOVEABLE = 0x0002
 
     DEFAULT_BROWSER_HINTS = [
         "habr",
@@ -27,6 +29,7 @@ class BrowserWindowService:
 
     def __init__(self) -> None:
         self.user32 = ctypes.windll.user32
+        self.kernel32 = ctypes.windll.kernel32
 
     def bring_to_front(
         self,
@@ -129,11 +132,35 @@ class BrowserWindowService:
         time.sleep(0.03)
         self.user32.keybd_event(key_vk, 0, self.KEYEVENTF_KEYUP, 0)
 
-    @staticmethod
-    def _set_clipboard_text(text: str) -> None:
-        root = tk.Tk()
-        root.withdraw()
-        root.clipboard_clear()
-        root.clipboard_append(text)
-        root.update()
-        root.destroy()
+    def _set_clipboard_text(self, text: str) -> None:
+        data = ctypes.create_unicode_buffer(text)
+
+        if not self.user32.OpenClipboard(None):
+            raise OSError("Не удалось открыть буфер обмена.")
+
+        handle = None
+        try:
+            self.user32.EmptyClipboard()
+
+            size = ctypes.sizeof(data)
+            handle = self.kernel32.GlobalAlloc(self.GMEM_MOVEABLE, size)
+            if not handle:
+                raise MemoryError("GlobalAlloc вернул NULL.")
+
+            locked = self.kernel32.GlobalLock(handle)
+            if not locked:
+                raise MemoryError("GlobalLock вернул NULL.")
+
+            try:
+                ctypes.memmove(locked, ctypes.addressof(data), size)
+            finally:
+                self.kernel32.GlobalUnlock(handle)
+
+            if not self.user32.SetClipboardData(self.CF_UNICODETEXT, handle):
+                raise OSError("SetClipboardData завершился ошибкой.")
+
+            handle = None
+        finally:
+            if handle:
+                self.kernel32.GlobalFree(handle)
+            self.user32.CloseClipboard()

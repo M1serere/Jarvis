@@ -6,10 +6,18 @@ import time
 import tkinter as tk
 from collections import deque
 from collections.abc import Callable
+from pathlib import Path
 
 from core.config import UI_WINDOW_TITLE
 from services.system_monitor import SystemMonitor
+from ui.windows_tray import WindowsTrayIcon
 
+
+import ctypes
+import math
+import sys
+import time
+import tkinter as tk
 
 class StatusWindow:
     BG = "#03131f"
@@ -34,7 +42,8 @@ class StatusWindow:
         self.root = tk.Tk()
         self.root.title(UI_WINDOW_TITLE)
         self.root.configure(bg=self.BG)
-        self.root.protocol("WM_DELETE_WINDOW", self._exit_app)
+        #self.root.protocol("WM_DELETE_WINDOW", self._exit_app)
+        self.root.protocol("WM_DELETE_WINDOW", self._hide_to_tray)
 
         self.overlay_mode = overlay_mode
         self.windowed_geometry = "980x620+80+60"
@@ -60,6 +69,7 @@ class StatusWindow:
         self.root.bind("<F11>", self._toggle_overlay_mode)
         self.root.bind("<Control-F11>", self._toggle_window_mode)
         self.root.bind("<Map>", self._handle_window_restore)
+        self.root.bind("<Unmap>", self._handle_window_unmap, add="+")
         self.root.bind("<Button-1>", self._handle_global_click, add="+")
 
         self.status_var = tk.StringVar(value="ГОТОВ")
@@ -73,6 +83,19 @@ class StatusWindow:
         self._on_overlay_mode_change = on_overlay_mode_change
         self._settings_menu_visible = False
         self._restoring_from_minimize = False
+        self._hidden_to_tray = False
+        self._exiting = False
+        self._suppress_unmap_handler = False
+        self._window_icon = None
+        self._tray_icon = WindowsTrayIcon(
+            tooltip=UI_WINDOW_TITLE,
+            on_restore=self._restore_from_tray,
+            on_exit=self._exit_from_tray,
+            icon_path=self._resolve_tray_icon_path(),
+        )
+        self._tray_icon.start()
+        self._set_window_icon()
+        self.root.after(100, self._force_show_in_taskbar)
 
         self.monitor = SystemMonitor()
         self.stats_history: dict[str, list[float]] = {
@@ -491,6 +514,7 @@ class StatusWindow:
             pass
 
         self.root.geometry(self.windowed_geometry)
+        self.root.after(50, self._force_show_in_taskbar)
 
     def _toggle_overlay_mode(self, _event=None) -> None:
         if self.overlay_mode:
@@ -508,17 +532,55 @@ class StatusWindow:
         self._toggle_overlay_mode()
 
     def _exit_app(self, _event=None) -> None:
-        self.root.destroy()
+        self._exiting = True
+
+        try:
+            self._tray_icon.stop()
+        except Exception:
+            pass
+
+        try:
+            self.root.quit()
+        except Exception:
+            pass
+
+        try:
+            self.root.destroy()
+        except Exception:
+            pass
 
     def _minimize_window(self) -> None:
+        if self._exiting:
+            return
+
+        if self._tray_icon.is_available():
+            self._hide_to_tray()
+            return
+
         self._restoring_from_minimize = True
         try:
             self.root.overrideredirect(False)
         except Exception:
             pass
-        self.root.iconify()
+
+        try:
+            self.root.iconify()
+        except Exception:
+            pass
+
+    def _handle_window_unmap(self, _event=None) -> None:
+        if self._exiting or self._suppress_unmap_handler:
+            return
+        try:
+            if self.root.state() != "iconic":
+                return
+        except Exception:
+            return
+        self.root.after(0, self._hide_to_tray)
 
     def _handle_window_restore(self, _event=None) -> None:
+        if self._hidden_to_tray:
+            return
         if self.root.state() == "iconic":
             return
         if self._restoring_from_minimize:
@@ -540,6 +602,103 @@ class StatusWindow:
             self.root.focus_force()
         except Exception:
             pass
+
+    def _hide_to_tray(self) -> None:
+        if self._hidden_to_tray or self._exiting:
+            return
+        if not self._tray_icon.is_available():
+            self._restoring_from_minimize = True
+            try:
+                self.root.iconify()
+            except Exception:
+                pass
+            return
+        self._hidden_to_tray = True
+        self._restoring_from_minimize = False
+        self._suppress_unmap_handler = True
+        try:
+            self.root.withdraw()
+        finally:
+            self.root.after(150, self._clear_unmap_suppression)
+
+    def _restore_from_tray(self) -> None:
+        self.root.after(0, self._restore_from_tray_ui)
+
+    def _restore_from_tray_ui(self) -> None:
+        if self._exiting:
+            return
+        self._hidden_to_tray = False
+        self._restoring_from_minimize = True
+        self._suppress_unmap_handler = True
+        try:
+            self.root.deiconify()
+            self.root.state("normal")
+        except Exception:
+            pass
+        self.root.after(30, self._restore_focus)
+        self.root.after(150, self._clear_unmap_suppression)
+        if self.overlay_mode:
+            self.root.after(80, self._set_fullscreen_overlay)
+
+    def _exit_from_tray(self) -> None:
+        self.root.after(0, self._exit_app)
+
+    def _clear_unmap_suppression(self) -> None:
+        self._suppress_unmap_handler = False
+
+    def _set_window_icon(self) -> None:
+        icon_path = Path(__file__).resolve().parent.parent / "j_logo.png"
+        if not icon_path.exists():
+            return
+        try:
+            self._window_icon = tk.PhotoImage(file=str(icon_path))
+            self.root.iconphoto(True, self._window_icon)
+        except Exception:
+            self._window_icon = None
+
+    def _force_show_in_taskbar(self) -> None:
+        if sys.platform != "win32":
+            return
+
+        try:
+            self.root.update_idletasks()
+            hwnd = self.root.winfo_id()
+
+            GWL_EXSTYLE = -20
+            WS_EX_APPWINDOW = 0x00040000
+            WS_EX_TOOLWINDOW = 0x00000080
+
+            user32 = ctypes.windll.user32
+
+            try:
+                get_window_long = user32.GetWindowLongW
+                set_window_long = user32.SetWindowLongW
+            except AttributeError:
+                get_window_long = user32.GetWindowLongPtrW
+                set_window_long = user32.SetWindowLongPtrW
+
+            style = get_window_long(hwnd, GWL_EXSTYLE)
+            style = style & ~WS_EX_TOOLWINDOW
+            style = style | WS_EX_APPWINDOW
+            set_window_long(hwnd, GWL_EXSTYLE, style)
+
+            # Перерегистрируем окно у shell, чтобы кнопка точно появилась на taskbar
+            self.root.withdraw()
+            self.root.after(30, self.root.deiconify)
+        except Exception:
+            pass    
+
+    @staticmethod
+    def _resolve_tray_icon_path() -> str | None:
+        project_dir = Path(__file__).resolve().parent.parent
+        candidate_paths = (
+            project_dir / "j_logo.ico",
+            project_dir / "build_assets" / "jarvis.ico",
+        )
+        for icon_path in candidate_paths:
+            if icon_path.exists():
+                return str(icon_path)
+        return None
 
     @staticmethod
     def _get_work_area_geometry() -> tuple[int, int, int, int]:

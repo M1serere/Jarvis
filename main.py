@@ -1,5 +1,20 @@
 import threading
 
+import ctypes
+import sys
+import threading
+
+if sys.platform == "win32":
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            "jarvis.desktop.assistant"
+        )
+    except Exception:
+        pass
+
+from voice.voice_controller import VoiceController
+from voice.wake_word import WakeWordListener
+
 from voice.voice_controller import VoiceController
 from voice.wake_word import WakeWordListener
 

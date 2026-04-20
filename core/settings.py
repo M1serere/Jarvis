@@ -13,7 +13,7 @@ SETTINGS_FILE = BASE_DIR / "settings.json"
 class AppSettings:
     voice_volume: int = 80
     autostart_enabled: bool = True
-    overlay_mode: bool = True
+    overlay_mode: bool = False
     installed_name_prompt_done: bool = False
 
 

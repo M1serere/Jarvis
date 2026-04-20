@@ -1,6 +1,6 @@
 {
   "voice_volume": 41,
   "autostart_enabled": true,
-  "overlay_mode": true,
+  "overlay_mode": false,
   "installed_name_prompt_done": false
 }

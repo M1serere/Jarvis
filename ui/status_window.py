@@ -667,11 +667,8 @@ class StatusWindow:
         if self._exiting:
             return
 
-        if self._tray_icon.is_available():
-            self._hide_to_tray()
-            return
-
         self._restoring_from_minimize = True
+
         try:
             self.root.overrideredirect(False)
         except Exception:
@@ -685,12 +682,16 @@ class StatusWindow:
     def _handle_window_unmap(self, _event=None) -> None:
         if self._exiting or self._suppress_unmap_handler:
             return
+
         try:
-            if self.root.state() != "iconic":
-                return
+            state = self.root.state()
         except Exception:
             return
-        self.root.after(0, self._hide_to_tray)
+
+        # Обычное сворачивание не отправляем в трей.
+        # В трей прячем только когда это явно вызвано через _hide_to_tray().
+        if state == "iconic":
+            return
 
     def _handle_window_restore(self, _event=None) -> None:
         if self._hidden_to_tray:
@@ -761,14 +762,36 @@ class StatusWindow:
         self._suppress_unmap_handler = False
 
     def _set_window_icon(self) -> None:
-        icon_path = Path(__file__).resolve().parent.parent / "j_logo.png"
-        if not icon_path.exists():
-            return
+        ico_path = self._resolve_window_icon_path()
+        png_path = Path(__file__).resolve().parent.parent / "j_logo.png"
+
         try:
-            self._window_icon = tk.PhotoImage(file=str(icon_path))
-            self.root.iconphoto(True, self._window_icon)
+            if ico_path is not None and sys.platform == "win32":
+                self.root.iconbitmap(default=ico_path)
+        except Exception:
+            pass
+
+        try:
+            if png_path.exists():
+                self._window_icon = tk.PhotoImage(file=str(png_path))
+                self.root.iconphoto(True, self._window_icon)
         except Exception:
             self._window_icon = None
+
+
+    @staticmethod
+    def _resolve_window_icon_path() -> str | None:
+        project_dir = Path(__file__).resolve().parent.parent
+        candidate_paths = (
+            project_dir / "build_assets" / "jarvis.ico",
+            project_dir / "j_logo.ico",
+        )
+
+        for icon_path in candidate_paths:
+            if icon_path.exists():
+                return str(icon_path)
+
+        return None
 
     def _force_show_in_taskbar(self) -> None:
         if sys.platform != "win32":
@@ -781,6 +804,10 @@ class StatusWindow:
             GWL_EXSTYLE = -20
             WS_EX_APPWINDOW = 0x00040000
             WS_EX_TOOLWINDOW = 0x00000080
+            SWP_NOMOVE = 0x0002
+            SWP_NOSIZE = 0x0001
+            SWP_NOZORDER = 0x0004
+            SWP_FRAMECHANGED = 0x0020
 
             user32 = ctypes.windll.user32
 
@@ -796,11 +823,29 @@ class StatusWindow:
             style = style | WS_EX_APPWINDOW
             set_window_long(hwnd, GWL_EXSTYLE, style)
 
-            # Перерегистрируем окно у shell, чтобы кнопка точно появилась на taskbar
+            user32.SetWindowPos(
+                hwnd,
+                0,
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED,
+            )
+
             self.root.withdraw()
-            self.root.after(30, self.root.deiconify)
+            self.root.after(60, self._restore_after_taskbar_refresh)
         except Exception:
-            pass    
+            pass 
+    
+    def _restore_after_taskbar_refresh(self) -> None:
+        try:
+            self.root.deiconify()
+            self.root.state("normal")
+            self.root.lift()
+            self.root.focus_force()
+        except Exception:
+            pass
 
     @staticmethod
     def _resolve_tray_icon_path() -> str | None:

@@ -32,6 +32,8 @@ class VoiceController:
             on_voice_volume_change=self.set_voice_volume,
             autostart_enabled=self.settings.autostart_enabled,
             on_autostart_change=self.set_autostart,
+            overlay_mode=self.settings.overlay_mode,
+            on_overlay_mode_change=self.set_overlay_mode,
         )
         self.work_timer = WorkTimer(
             notify_callback=self.notify_break,
@@ -50,6 +52,7 @@ class VoiceController:
         self.settings = AppSettings(
             voice_volume=safe_volume,
             autostart_enabled=self.settings.autostart_enabled,
+            overlay_mode=self.settings.overlay_mode,
         )
         self.tts.set_volume(safe_volume)
         try:
@@ -64,6 +67,7 @@ class VoiceController:
         self.settings = AppSettings(
             voice_volume=self.settings.voice_volume,
             autostart_enabled=desired_state if success else autostart.is_enabled(),
+            overlay_mode=self.settings.overlay_mode,
         )
         self.ui.set_autostart_value(self.settings.autostart_enabled)
 
@@ -78,15 +82,28 @@ class VoiceController:
             self.settings = AppSettings(
                 voice_volume=self.settings.voice_volume,
                 autostart_enabled=actual_state and self.settings.autostart_enabled,
+                overlay_mode=self.settings.overlay_mode,
             )
         else:
             self.settings = AppSettings(
                 voice_volume=self.settings.voice_volume,
                 autostart_enabled=False,
+                overlay_mode=self.settings.overlay_mode,
             )
 
         self.ui.set_autostart_value(self.settings.autostart_enabled)
 
+        try:
+            self.settings_store.save(self.settings)
+        except Exception:
+            pass
+
+    def set_overlay_mode(self, enabled: bool) -> None:
+        self.settings = AppSettings(
+            voice_volume=self.settings.voice_volume,
+            autostart_enabled=self.settings.autostart_enabled,
+            overlay_mode=bool(enabled),
+        )
         try:
             self.settings_store.save(self.settings)
         except Exception:

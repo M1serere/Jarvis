@@ -14,6 +14,7 @@ from memory.session_memory import SessionMemory
 from memory.user_profile import UserProfile
 from safety.guard import SafetyGuard
 from safety.messages import build_confirmation_message
+from services.browser_window_service import BrowserWindowService
 from services.habr_news_service import HABR_DAILY_NEWS_URL, HabrNewsService
 from services.http_client import HttpClient
 from tools.registry import ToolRegistry
@@ -40,6 +41,7 @@ class JarvisOrchestrator:
         self.profile = UserProfile(self.persistent)
         self.references = ReferenceResolver()
         self.facts_memory = FactsMemory(self.persistent)
+        self.browser_window = BrowserWindowService()
         self.habr_news = HabrNewsService(http_client=HttpClient())
 
     def _set_status(self, status: str, detail: str = "") -> None:
@@ -438,6 +440,7 @@ class JarvisOrchestrator:
         }
         open_news_triggers = {
             "это интересно",
+            "открой",
             "открой эту",
             "открой эту новость",
             "открой новость",
@@ -485,11 +488,12 @@ class JarvisOrchestrator:
                 approved=False,
             )
 
+        self.browser_window.scroll_to_text(
+            current_item.title,
+            title_hints=["habr", "chrome", "edge", "firefox", "opera", "yandex"],
+        )
         return OrchestratorResponse(
-            response_text=(
-                f"Открываю Habr Новости. Первая новость: {current_item.title}. "
-                "Скажи 'дальше', чтобы перейти к следующей, или 'открой эту'."
-            ),
+            response_text=f"Вот сегодняшние новости. {current_item.title}.",
             raw_decision=empty_decision(),
             approved=True,
         )
@@ -513,14 +517,22 @@ class JarvisOrchestrator:
             )
 
         if current_before_move is not None and current_before_move.url == next_item.url:
+            self.browser_window.scroll_to_text(
+                next_item.title,
+                title_hints=["habr", "chrome", "edge", "firefox", "opera", "yandex"],
+            )
             return OrchestratorResponse(
                 response_text=f"Это последняя новость на сегодня: {next_item.title}.",
                 raw_decision=empty_decision(),
                 approved=True,
             )
 
+        self.browser_window.scroll_to_text(
+            next_item.title,
+            title_hints=["habr", "chrome", "edge", "firefox", "opera", "yandex"],
+        )
         return OrchestratorResponse(
-            response_text=f"Следующая новость: {next_item.title}.",
+            response_text=next_item.title,
             raw_decision=empty_decision(),
             approved=True,
         )
@@ -534,13 +546,13 @@ class JarvisOrchestrator:
                 approved=False,
             )
 
-        result = self._handle_tool_call("open_url", {"url": current_item.url})
+        self._handle_tool_call("open_url", {"url": current_item.url})
+        self.browser_window.bring_to_front(
+            title_hints=["habr", "chrome", "edge", "firefox", "opera", "yandex"],
+        )
         self.memory.clear_news_items()
         return OrchestratorResponse(
-            response_text=(
-                f"{result}. Перехожу в режим ожидания. "
-                "Когда будете готовы, скажите 'Джарвис'."
-            ),
+            response_text="Открываю. Приятного чтения.",
             raw_decision=empty_decision(),
             approved=True,
             keep_awake=False,

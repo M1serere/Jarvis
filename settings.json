@@ -1,4 +1,5 @@
 {
   "voice_volume": 41,
-  "autostart_enabled": true
+  "autostart_enabled": true,
+  "overlay_mode": true
 }

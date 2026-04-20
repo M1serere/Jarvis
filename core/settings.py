@@ -13,6 +13,7 @@ SETTINGS_FILE = BASE_DIR / "settings.json"
 class AppSettings:
     voice_volume: int = 80
     autostart_enabled: bool = True
+    overlay_mode: bool = True
 
 
 class SettingsStore:
@@ -28,6 +29,7 @@ class SettingsStore:
             return AppSettings(
                 voice_volume=self._clamp_volume(data.get("voice_volume", 80)),
                 autostart_enabled=self._to_bool(data.get("autostart_enabled", True)),
+                overlay_mode=self._to_bool(data.get("overlay_mode", True)),
             )
         except Exception:
             return AppSettings()
@@ -38,6 +40,7 @@ class SettingsStore:
         payload["autostart_enabled"] = self._to_bool(
             payload.get("autostart_enabled", True)
         )
+        payload["overlay_mode"] = self._to_bool(payload.get("overlay_mode", False))
         self._path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",

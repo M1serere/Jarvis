@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import math
 import time
 import tkinter as tk
@@ -27,23 +28,26 @@ class StatusWindow:
         on_voice_volume_change: Callable[[int], None] | None = None,
         autostart_enabled: bool = False,
         on_autostart_change: Callable[[bool], None] | None = None,
+        overlay_mode: bool = True,
+        on_overlay_mode_change: Callable[[bool], None] | None = None,
     ) -> None:
         self.root = tk.Tk()
         self.root.title(UI_WINDOW_TITLE)
         self.root.configure(bg=self.BG)
+        self.root.protocol("WM_DELETE_WINDOW", self._exit_app)
 
-        self.overlay_mode = True
+        self.overlay_mode = overlay_mode
         self.windowed_geometry = "980x620+80+60"
         self.root.geometry(self.windowed_geometry)
         self.root.minsize(980, 620)
 
         try:
-            self.root.overrideredirect(True)
+            self.root.overrideredirect(False)
         except Exception:
             pass
 
         try:
-            self.root.attributes("-topmost", True)
+            self.root.attributes("-topmost", False)
         except Exception:
             pass
 
@@ -66,7 +70,9 @@ class StatusWindow:
         self.autostart_var = tk.BooleanVar(value=autostart_enabled)
         self._on_voice_volume_change = on_voice_volume_change
         self._on_autostart_change = on_autostart_change
+        self._on_overlay_mode_change = on_overlay_mode_change
         self._settings_menu_visible = False
+        self._restoring_from_minimize = False
 
         self.monitor = SystemMonitor()
         self.stats_history: dict[str, list[float]] = {
@@ -88,12 +94,15 @@ class StatusWindow:
         self._update_volume_label(self.voice_volume_var.get())
         self.root.bind("<Configure>", self._on_resize)
 
-        self._set_fullscreen_overlay()
+        if self.overlay_mode:
+            self._set_fullscreen_overlay()
+        else:
+            self._set_windowed_mode()
 
         self._push_log("BOOT SEQUENCE STARTED")
         self._push_log("VISUAL CORE ONLINE")
         self._push_log("VOICE CHANNEL READY")
-        self._push_log("OVERLAY MODE ENABLED")
+        self._push_log("OVERLAY MODE ENABLED" if self.overlay_mode else "WINDOWED MODE ENABLED")
 
         self._update_clock()
         self._update_stats_loop()
@@ -159,6 +168,24 @@ class StatusWindow:
             tags="window_controls",
         )
 
+        self.close_button = tk.Button(
+            self.window_controls,
+            text="X",
+            command=self._exit_app,
+            bg=self.PANEL_2,
+            fg=self.CYAN,
+            activebackground="#5B1B24",
+            activeforeground=self.TEXT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=self.LINE,
+            font=("Consolas", 12, "bold"),
+            width=3,
+            cursor="hand2",
+        )
+        self.close_button.pack(side="right", anchor="e")
+
         self.minimize_button = tk.Button(
             self.window_controls,
             text="_",
@@ -175,7 +202,7 @@ class StatusWindow:
             width=3,
             cursor="hand2",
         )
-        self.minimize_button.pack(anchor="e")
+        self.minimize_button.pack(side="right", anchor="e", padx=(0, 6))
 
         self.header_frame = tk.Frame(self.right_panel, bg=self.PANEL)
         self.header_frame.pack(fill="x", padx=16, pady=(16, 10))
@@ -428,18 +455,36 @@ class StatusWindow:
 
     def _set_fullscreen_overlay(self) -> None:
         try:
-            self.root.overrideredirect(True)
+            self.root.attributes("-fullscreen", False)
         except Exception:
             pass
 
         try:
-            self.root.state("zoomed")
+            self.root.attributes("-topmost", False)
         except Exception:
-            self.root.attributes("-fullscreen", True)
+            pass
+
+        try:
+            self.root.state("normal")
+        except Exception:
+            pass
+
+        try:
+            self.root.overrideredirect(True)
+        except Exception:
+            pass
+
+        left, top, width, height = self._get_work_area_geometry()
+        self.root.geometry(f"{width}x{height}+{left}+{top}")
 
     def _set_windowed_mode(self) -> None:
         try:
             self.root.attributes("-fullscreen", False)
+        except Exception:
+            pass
+
+        try:
+            self.root.attributes("-topmost", False)
         except Exception:
             pass
 
@@ -459,6 +504,8 @@ class StatusWindow:
             self.overlay_mode = True
             self._set_fullscreen_overlay()
             self._push_log("OVERLAY MODE ENABLED")
+        if self._on_overlay_mode_change is not None:
+            self._on_overlay_mode_change(self.overlay_mode)
 
     def _toggle_window_mode(self, _event=None) -> None:
         self._toggle_overlay_mode()
@@ -467,6 +514,7 @@ class StatusWindow:
         self.root.destroy()
 
     def _minimize_window(self) -> None:
+        self._restoring_from_minimize = True
         try:
             self.root.overrideredirect(False)
         except Exception:
@@ -476,8 +524,56 @@ class StatusWindow:
     def _handle_window_restore(self, _event=None) -> None:
         if self.root.state() == "iconic":
             return
+        if self._restoring_from_minimize:
+            self._restoring_from_minimize = False
+            self.root.after(30, self._restore_focus)
         if self.overlay_mode:
             self.root.after(10, self._set_fullscreen_overlay)
+
+    def _restore_focus(self) -> None:
+        try:
+            self.root.deiconify()
+        except Exception:
+            pass
+        try:
+            self.root.lift()
+        except Exception:
+            pass
+        try:
+            self.root.focus_force()
+        except Exception:
+            pass
+
+    @staticmethod
+    def _get_work_area_geometry() -> tuple[int, int, int, int]:
+        class RECT(ctypes.Structure):
+            _fields_ = [
+                ("left", ctypes.c_long),
+                ("top", ctypes.c_long),
+                ("right", ctypes.c_long),
+                ("bottom", ctypes.c_long),
+            ]
+
+        rect = RECT()
+        spi_getworkarea = 0x0030
+        success = ctypes.windll.user32.SystemParametersInfoW(
+            spi_getworkarea,
+            0,
+            ctypes.byref(rect),
+            0,
+        )
+        if success:
+            return (
+                int(rect.left),
+                int(rect.top),
+                max(200, int(rect.right - rect.left)),
+                max(200, int(rect.bottom - rect.top)),
+            )
+
+        user32 = ctypes.windll.user32
+        width = user32.GetSystemMetrics(0)
+        height = user32.GetSystemMetrics(1)
+        return (0, 0, max(200, int(width)), max(200, int(height)))
 
     def set_status(self, status: str, detail: str = "") -> None:
         self.root.after(0, self._apply_status, status, detail)

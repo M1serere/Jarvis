@@ -12,37 +12,31 @@ class MockBrainAdapter(BaseBrainAdapter):
     )
 
     CREATE_FILE_WITH_TEXT_PATTERN = re.compile(
-        r"СЃРѕР·РґР°Р№ С„Р°Р№Р»\s+([^\s]+)\s+СЃ С‚РµРєСЃС‚РѕРј\s+(.+)",
+        r"создай файл\s+([^\s]+)\s+с текстом\s+(.+)",
         re.IGNORECASE,
     )
-
     CREATE_FILE_PATTERN = re.compile(
-        r"СЃРѕР·РґР°Р№ С„Р°Р№Р»\s+([^\s]+)",
+        r"создай файл\s+([^\s]+)",
         re.IGNORECASE,
     )
-
     OPEN_FILE_PATTERN = re.compile(
-        r"РѕС‚РєСЂРѕР№ С„Р°Р№Р»\s+([^\s]+)",
+        r"открой файл\s+([^\s]+)",
         re.IGNORECASE,
     )
-
     APPEND_FILE_PATTERN = re.compile(
-        r"РґРѕР±Р°РІСЊ РІ С„Р°Р№Р»\s+([^\s]+)\s+С‚РµРєСЃС‚\s+(.+)",
+        r"добавь в файл\s+([^\s]+)\s+текст\s+(.+)",
         re.IGNORECASE,
     )
-
     REPLACE_FILE_TEXT_PATTERN = re.compile(
-        r"Р·Р°РјРµРЅРё РІ С„Р°Р№Р»Рµ\s+([^\s]+)\s+(.+)\s+РЅР°\s+(.+)",
+        r"замени в файле\s+([^\s]+)\s+(.+)\s+на\s+(.+)",
         re.IGNORECASE,
     )
-
     REWRITE_FILE_PATTERN = re.compile(
-        r"РёР·РјРµРЅРё С„Р°Р№Р»\s+([^\s]+)\s+РЅР° С‚РµРєСЃС‚\s+(.+)",
+        r"измени файл\s+([^\s]+)\s+на текст\s+(.+)",
         re.IGNORECASE,
     )
-
     DELETE_FILE_PATTERN = re.compile(
-        r"СѓРґР°Р»Рё С„Р°Р№Р»\s+([^\s]+)",
+        r"удали файл\s+([^\s]+)",
         re.IGNORECASE,
     )
 
@@ -55,27 +49,25 @@ class MockBrainAdapter(BaseBrainAdapter):
     ) -> AssistantDecision:
         text = user_text.lower().strip()
 
-        if "РїСЂРёРІРµС‚" in text:
+        if "привет" in text:
             return AssistantDecision(
                 decision_type="respond",
-                response_text="РџСЂРёРІРµС‚. РЇ РЅР° СЃРІСЏР·Рё.",
+                response_text="Привет. Я на связи.",
             )
 
-        if "РєР°Рє РґРµР»Р°" in text:
+        if "как дела" in text:
+            return AssistantDecision(
+                decision_type="respond",
+                response_text="Работаю стабильно. Сейчас я в fallback-режиме без Ollama.",
+            )
+
+        if "что ты умеешь" in text:
             return AssistantDecision(
                 decision_type="respond",
                 response_text=(
-                    "Р Р°Р±РѕС‚Р°СЋ СЃС‚Р°Р±РёР»СЊРЅРѕ. РЎРµР№С‡Р°СЃ СЌС‚Рѕ mock-СЂРµР¶РёРј."
-                ),
-            )
-
-        if "С‡С‚Рѕ С‚С‹ СѓРјРµРµС€СЊ" in text:
-            return AssistantDecision(
-                decision_type="respond",
-                response_text=(
-                    "РЎРµР№С‡Р°СЃ СЏ СѓРјРµСЋ РѕС‚РІРµС‡Р°С‚СЊ С‚РµРєСЃС‚РѕРј, РѕС‚РєСЂС‹РІР°С‚СЊ СЃР°Р№С‚С‹, РёСЃРєР°С‚СЊ РІ Google, "
-                    "СЃРѕР·РґР°РІР°С‚СЊ С„Р°Р№Р»С‹, С‡РёС‚Р°С‚СЊ С„Р°Р№Р»С‹, РёР·РјРµРЅСЏС‚СЊ С„Р°Р№Р»С‹ РІ СЂР°Р±РѕС‡РµР№ РїР°РїРєРµ, "
-                    "РїРѕР»СѓС‡Р°С‚СЊ РїРѕРіРѕРґСѓ Рё СЃРІРµР¶РёРµ РЅРѕРІРѕСЃС‚Рё РїСЂРѕРіСЂР°РјРјРёСЂРѕРІР°РЅРёСЏ."
+                    "Я могу отвечать на простые запросы, открывать сайты и файлы, "
+                    "искать в браузере, получать погоду и новости, а также выполнять "
+                    "простые операции с файлами."
                 ),
             )
 
@@ -164,7 +156,7 @@ class MockBrainAdapter(BaseBrainAdapter):
                 tool_args={"query": search_query},
             )
 
-        if any(phrase in text for phrase in ["РѕС‚РєСЂРѕР№ СЃР°Р№С‚", "РѕС‚РєСЂРѕР№", "open"]):
+        if any(phrase in text for phrase in ["открой сайт", "открой", "open"]):
             url = self._extract_url(user_text)
             if url:
                 return AssistantDecision(
@@ -175,20 +167,20 @@ class MockBrainAdapter(BaseBrainAdapter):
 
             return AssistantDecision(
                 decision_type="respond",
-                response_text="РЇ РїРѕРЅСЏР», С‡С‚Рѕ РЅСѓР¶РЅРѕ РѕС‚РєСЂС‹С‚СЊ СЃР°Р№С‚, РЅРѕ РЅРµ СѓРІРёРґРµР» Р°РґСЂРµСЃ.",
+                response_text="Скажите, что именно открыть.",
             )
 
         return AssistantDecision(
             decision_type="respond",
-            response_text=f"РЇ РїРѕР»СѓС‡РёР» СЃРѕРѕР±С‰РµРЅРёРµ: '{user_text}'.",
+            response_text=f"Я получил сообщение: '{user_text}'.",
         )
 
     def _is_weather_request(self, text: str) -> bool:
         triggers = [
-            "РєР°РєР°СЏ СЃРµРіРѕРґРЅСЏ РїРѕРіРѕРґР°",
-            "РїРѕРіРѕРґР° СЃРµРіРѕРґРЅСЏ",
-            "С‡С‚Рѕ РїРѕ РїРѕРіРѕРґРµ",
-            "РєР°РєР°СЏ РїРѕРіРѕРґР°",
+            "какая сегодня погода",
+            "погода сегодня",
+            "что по погоде",
+            "какая погода",
             "weather",
         ]
         return any(trigger in text for trigger in triggers)
@@ -197,16 +189,15 @@ class MockBrainAdapter(BaseBrainAdapter):
         match = re.search(r"(?:погода|weather)\s+(?:в|for)\s+(.+)$", text, re.IGNORECASE)
         if not match:
             return None
-
         location = match.group(1).strip(" .!?")
         return location or None
 
     def _is_programming_news_request(self, text: str) -> bool:
         triggers = [
-            "РєР°РєРёРµ РЅРѕРІРѕСЃС‚Рё РїСЂРѕРіСЂР°РјРјРёСЂРѕРІР°РЅРёСЏ",
-            "РЅРѕРІРѕСЃС‚Рё РїСЂРѕРіСЂР°РјРјРёСЂРѕРІР°РЅРёСЏ",
-            "РЅРѕРІРѕСЃС‚Рё python",
-            "РЅРѕРІРѕСЃС‚Рё СЂР°Р·СЂР°Р±РѕС‚РєРё",
+            "какие новости программирования",
+            "новости программирования",
+            "новости python",
+            "новости разработки",
             "tech news",
         ]
         return any(trigger in text for trigger in triggers)
@@ -219,20 +210,17 @@ class MockBrainAdapter(BaseBrainAdapter):
 
     def _extract_search_query(self, text: str) -> str | None:
         lowered = text.lower().strip()
-
         prefixes = [
-            "РЅР°Р№РґРё РІ РіСѓРіР»Рµ ",
-            "РїРѕРёС‰Рё РІ РіСѓРіР»Рµ ",
-            "РЅР°Р№РґРё РІ google ",
-            "РїРѕРёС‰Рё РІ google ",
+            "найди в гугле ",
+            "поищи в гугле ",
+            "найди в google ",
+            "поищи в google ",
             "search google ",
             "google ",
         ]
-
         for prefix in prefixes:
             if lowered.startswith(prefix):
                 return text[len(prefix):].strip()
-
         return None
 
     def _extract_create_file_with_text(self, text: str) -> dict[str, str] | None:

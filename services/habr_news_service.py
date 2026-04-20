@@ -37,20 +37,39 @@ class HabrNewsService:
         return unique_entries
 
     def _parse_entries(self, page_html: str) -> list[HabrNewsEntry]:
-        pattern = re.compile(
-            r'<a[^>]+href="(?P<href>/ru/news/\d+/|https://habr\.com/ru/news/\d+/)"[^>]*>'
-            r"(?P<title>.*?)</a>",
+        anchor_pattern = re.compile(
+            r"<a(?P<attrs>[^>]+)>(?P<title>.*?)</a>",
             re.IGNORECASE | re.DOTALL,
         )
-
         entries: list[HabrNewsEntry] = []
-        for match in pattern.finditer(page_html):
+        for match in anchor_pattern.finditer(page_html):
+            attrs = match.group("attrs")
+            href_match = re.search(
+                r'href="(?P<href>/ru/news/\d+/|https://habr\.com/ru/news/\d+/)"',
+                attrs,
+                re.IGNORECASE,
+            )
+            if href_match is None:
+                continue
+
+            class_match = re.search(
+                r'class="(?P<class>[^"]+)"',
+                attrs,
+                re.IGNORECASE,
+            )
+            class_value = class_match.group("class").lower() if class_match else ""
+            if not any(
+                token in class_value
+                for token in ("tm-title__link", "tm-article-snippet__title-link")
+            ):
+                continue
+
             raw_title = match.group("title")
             title = self._clean_html(raw_title)
             if not title:
                 continue
 
-            href = html.unescape(match.group("href").strip())
+            href = html.unescape(href_match.group("href").strip())
             if href.startswith("/"):
                 href = f"https://habr.com{href}"
 

@@ -24,6 +24,13 @@ class VoiceController:
         "джарвис можешь отдохнуть",
     }
 
+    TEXT_HELP_COMMANDS = {
+        "что ты можешь",
+        "что ты умеешь",
+        "твои возможности",
+        "список возможностей",
+    }
+
     def __init__(self) -> None:
         self.settings_store = SettingsStore()
         self.settings = self.settings_store.load()
@@ -45,6 +52,7 @@ class VoiceController:
             status_ui=self.ui,
             work_time_provider=self.work_timer.get_elapsed_seconds,
         )
+        self.ui.set_text_submit_handler(self.handle_text_chat_submit)
         self._activation_lock = threading.Lock()
         self._is_awake = False
         self._sync_autostart()
@@ -196,6 +204,33 @@ class VoiceController:
     def _is_sleep_command(self, text: str) -> bool:
         return self._normalize_command(text) in self.SLEEP_COMMANDS
 
+    def _is_text_help_command(self, text: str) -> bool:
+        return self._normalize_command(text) in self.TEXT_HELP_COMMANDS
+
+    @staticmethod
+    def _build_text_capabilities_message() -> str:
+        return (
+            "Вот что я сейчас умею:\n"
+            "\n"
+            "1. Общаться в текстовом и голосовом режиме.\n"
+            "2. Отвечать на вопросы и поддерживать диалог.\n"
+            "3. Искать информацию в браузере и открывать сайты.\n"
+            "4. Показывать погоду.\n"
+            "5. Выводить новости по программированию.\n"
+            "6. Создавать, открывать, редактировать и удалять файлы.\n"
+            "7. Управлять окнами приложений.\n"
+            "8. Выполнять базовые системные команды.\n"
+            "9. Управлять музыкой.\n"
+            "10. Запоминать факты о вас и использовать их в диалоге.\n"
+            "\n"
+            "Можно написать, например:\n"
+            "- открой YouTube\n"
+            "- какая погода\n"
+            "- создай файл notes.txt\n"
+            "- запомни, что я работаю в Python\n"
+            "- покажи новости по программированию"
+        )
+
     def run_once(self) -> bool:
         self.ui.set_status("Слушает", "Жду голосовую команду")
         user_text = self.stt.listen(timeout=None, phrase_time_limit=None)
@@ -251,3 +286,26 @@ class VoiceController:
         finally:
             self._set_idle_status()
             self._activation_lock.release()
+
+    def handle_text_chat_submit(self, text: str) -> None:
+        worker = threading.Thread(
+            target=self._process_text_chat,
+            args=(text,),
+            daemon=True,
+        )
+        worker.start()
+
+    def _process_text_chat(self, text: str) -> None:
+        try:
+            if self._is_text_help_command(text):
+                self.ui.add_chat_message("JARVIS", self._build_text_capabilities_message())
+                return
+
+            response = self.orchestrator.handle_user_input(text)
+            self.ui.add_chat_message("JARVIS", response.response_text)
+        except Exception as exc:
+            self.ui.add_chat_message("SYS", f"Text chat error: {exc}")
+            self.ui.set_status("Готов", "Ошибка текстового канала")
+        finally:
+            self.ui.set_text_chat_busy(False)
+            self._set_idle_status()

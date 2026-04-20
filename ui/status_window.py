@@ -38,6 +38,7 @@ class StatusWindow:
         on_autostart_change: Callable[[bool], None] | None = None,
         overlay_mode: bool = True,
         on_overlay_mode_change: Callable[[bool], None] | None = None,
+        on_text_submit: Callable[[str], None] | None = None,
     ) -> None:
         self.root = tk.Tk()
         self.root.title(UI_WINDOW_TITLE)
@@ -81,6 +82,7 @@ class StatusWindow:
         self._on_voice_volume_change = on_voice_volume_change
         self._on_autostart_change = on_autostart_change
         self._on_overlay_mode_change = on_overlay_mode_change
+        self._on_text_submit = on_text_submit
         self._settings_menu_visible = False
         self._restoring_from_minimize = False
         self._hidden_to_tray = False
@@ -107,6 +109,7 @@ class StatusWindow:
         }
         self.max_points = 90
         self.command_history = deque(maxlen=6)
+        self.chat_history = deque(maxlen=160)
 
         self._pulse_level = 0.25
 
@@ -178,6 +181,96 @@ class StatusWindow:
             font=("Consolas", 10),
         )
         self.subtitle_label.pack(anchor="w", pady=(2, 0))
+
+        self.chat_panel = tk.Frame(
+            self.canvas,
+            bg=self.PANEL_2,
+            highlightbackground=self.LINE,
+            highlightthickness=1,
+        )
+        self.chat_panel_window = self.canvas.create_window(
+            0,
+            0,
+            anchor="nw",
+            window=self.chat_panel,
+            tags="chat_panel",
+        )
+
+        tk.Label(
+            self.chat_panel,
+            text="TEXT CHAT",
+            bg=self.PANEL_2,
+            fg=self.CYAN,
+            font=("Consolas", 10, "bold"),
+        ).pack(anchor="w", padx=12, pady=(10, 4))
+
+        self.chat_output_frame = tk.Frame(self.chat_panel, bg=self.PANEL_2)
+        self.chat_output_frame.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        self.chat_output = tk.Text(
+            self.chat_output_frame,
+            height=8,
+            bg=self.PANEL_2,
+            fg=self.TEXT,
+            insertbackground=self.CYAN,
+            relief="flat",
+            bd=0,
+            font=("Consolas", 9),
+            padx=10,
+            pady=6,
+            wrap="word",
+        )
+        self.chat_output.pack(side="left", fill="both", expand=True)
+        self.chat_output.bind("<MouseWheel>", self._scroll_chat_output)
+        self.chat_output.bind("<Button-4>", self._scroll_chat_output)
+        self.chat_output.bind("<Button-5>", self._scroll_chat_output)
+
+        self.chat_scrollbar = tk.Scrollbar(
+            self.chat_output_frame,
+            orient="vertical",
+            command=self.chat_output.yview,
+            troughcolor=self.PANEL,
+            activebackground=self.CYAN_SOFT,
+            bg=self.PANEL,
+        )
+        self.chat_scrollbar.pack(side="right", fill="y")
+        self.chat_output.configure(yscrollcommand=self.chat_scrollbar.set)
+        self.chat_output.configure(state="disabled")
+
+        self.chat_input_row = tk.Frame(self.chat_panel, bg=self.PANEL_2)
+        self.chat_input_row.pack(fill="x", padx=8, pady=(0, 8))
+
+        self.chat_entry = tk.Entry(
+            self.chat_input_row,
+            bg=self.BG,
+            fg=self.TEXT,
+            insertbackground=self.CYAN,
+            relief="flat",
+            bd=0,
+            font=("Consolas", 10),
+        )
+        self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 8), ipady=7)
+        self.chat_entry.bind("<Return>", self._submit_text_chat)
+
+        self.chat_send_button = tk.Button(
+            self.chat_input_row,
+            text="SEND",
+            command=self._submit_text_chat,
+            bg=self.PANEL,
+            fg=self.CYAN,
+            activebackground=self.LINE,
+            activeforeground=self.TEXT,
+            relief="flat",
+            bd=0,
+            highlightthickness=1,
+            highlightbackground=self.LINE,
+            font=("Consolas", 9, "bold"),
+            cursor="hand2",
+            width=8,
+        )
+        self.chat_send_button.pack(side="right")
+
+        self._append_chat_message_ui("SYS", "Text channel initialized. Ready for messages.")
 
         self.window_controls = tk.Frame(self.canvas, bg=self.BG)
         self.canvas.create_window(
@@ -469,9 +562,29 @@ class StatusWindow:
         self.canvas.coords("top_bar", 24, 18)
         canvas_width = max(self.canvas.winfo_width(), 200)
         self.canvas.coords("window_controls", canvas_width - 24, 18)
+        self._position_chat_panel()
 
         if self._settings_menu_visible:
             self._show_settings_menu()
+
+    def _position_chat_panel(self) -> None:
+        width = max(self.canvas.winfo_width(), 600)
+        height = max(self.canvas.winfo_height(), 400)
+        left = 28
+        right = width - 28
+        top = 90
+        bottom = height - 170
+        col_gap = 16
+        row_gap = 16
+        chart_w = (right - left - col_gap) / 2
+        chart_h = (bottom - top - row_gap) / 3
+        panel_x = left + chart_w + col_gap
+        panel_y = top + (chart_h + row_gap) * 2
+        panel_w = max(chart_w, 240)
+        panel_h = max(chart_h, 140)
+
+        self.canvas.coords(self.chat_panel_window, panel_x, panel_y)
+        self.canvas.itemconfigure(self.chat_panel_window, width=panel_w, height=panel_h)
 
     def _set_fullscreen_overlay(self) -> None:
         try:
@@ -798,6 +911,65 @@ class StatusWindow:
         self.log_box.see("end")
         self.log_box.configure(state="disabled")
 
+    def set_text_submit_handler(self, handler: Callable[[str], None] | None) -> None:
+        self._on_text_submit = handler
+
+    def set_text_chat_busy(self, busy: bool) -> None:
+        self.root.after(0, self._set_text_chat_busy_ui, busy)
+
+    def _set_text_chat_busy_ui(self, busy: bool) -> None:
+        state = "disabled" if busy else "normal"
+        self.chat_entry.configure(state=state)
+        self.chat_send_button.configure(state=state)
+        if not busy:
+            self.chat_entry.focus_set()
+
+    def add_chat_message(self, author: str, text: str) -> None:
+        if not text:
+            return
+        self.root.after(0, self._append_chat_message_ui, author, text)
+
+    def _append_chat_message_ui(self, author: str, text: str) -> None:
+        for part in str(text).splitlines() or [""]:
+            self.chat_history.append((author, part))
+
+        self.chat_output.configure(state="normal")
+        self.chat_output.delete("1.0", "end")
+
+        for speaker, line in self.chat_history:
+            prefix = f"{speaker}> "
+            self.chat_output.insert("end", prefix + line + "\n")
+
+        self.chat_output.see("end")
+        self.chat_output.configure(state="disabled")
+
+    def _scroll_chat_output(self, event) -> str:
+        if getattr(event, "delta", 0):
+            step = -1 if event.delta > 0 else 1
+        elif getattr(event, "num", None) == 4:
+            step = -1
+        else:
+            step = 1
+
+        self.chat_output.yview_scroll(step, "units")
+        return "break"
+
+    def _submit_text_chat(self, _event=None) -> None:
+        text = self.chat_entry.get().strip()
+        if not text:
+            return
+
+        self.chat_entry.delete(0, "end")
+        self.add_chat_message("YOU", text)
+        self.add_user_command(text)
+
+        if self._on_text_submit is None:
+            self.add_chat_message("SYS", "Text handler is not connected.")
+            return
+
+        self.set_text_chat_busy(True)
+        self._on_text_submit(text)
+
     def _update_clock(self) -> None:
         self.clock_var.set(time.strftime("%H:%M:%S"))
         self.root.after(1000, self._update_clock)
@@ -832,6 +1004,7 @@ class StatusWindow:
         self._draw_chart_panel(width, height)
         self._draw_command_history(width, height)
         self._draw_mic_icon()
+        self._position_chat_panel()
 
         self.root.after(80, self._animate)
 
@@ -888,49 +1061,6 @@ class StatusWindow:
             x2 = x1 + chart_w
             y2 = y1 + chart_h
             self._draw_single_chart(x1, y1, x2, y2, title, values, value_text)
-
-        x1 = left + chart_w + col_gap
-        y1 = top + (chart_h + row_gap) * 2
-        x2 = x1 + chart_w
-        y2 = y1 + chart_h
-
-        self.canvas.create_rectangle(x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
-        self.canvas.create_text(
-            x1 + 14,
-            y1 + 14,
-            anchor="nw",
-            text="JARVIS CORE",
-            fill=self.CYAN,
-            font=("Consolas", 10, "bold"),
-            tags="hud",
-        )
-        self.canvas.create_text(
-            x1 + 14,
-            y1 + 42,
-            anchor="nw",
-            text=f"STATUS   {self.status_var.get()}",
-            fill=self.TEXT,
-            font=("Consolas", 10),
-            tags="hud",
-        )
-        self.canvas.create_text(
-            x1 + 14,
-            y1 + 64,
-            anchor="nw",
-            text=f"DETAIL   {self.detail_var.get()[:30]}",
-            fill=self.TEXT_DIM,
-            font=("Consolas", 10),
-            tags="hud",
-        )
-        self.canvas.create_text(
-            x1 + 14,
-            y1 + 92,
-            anchor="nw",
-            text="HUD NODE ACTIVE",
-            fill=self.CYAN_SOFT,
-            font=("Consolas", 10),
-            tags="hud",
-        )
 
     def _draw_single_chart(
         self,
@@ -995,8 +1125,12 @@ class StatusWindow:
         x2 = width - 28
         y2 = height - 24
         y1 = y2 - 112
+        gap = 16
+        split = x1 + (x2 - x1 - gap) / 2
+        left_x2 = split
+        right_x1 = split + gap
 
-        self.canvas.create_rectangle(x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
+        self.canvas.create_rectangle(x1, y1, left_x2, y2, outline=self.LINE, width=1, tags="hud")
         self.canvas.create_text(
             x1 + 14,
             y1 + 12,
@@ -1024,11 +1158,49 @@ class StatusWindow:
                 x1 + 14,
                 y1 + 42 + idx * 14,
                 anchor="nw",
-                text=line[:120],
+                text=line[:58],
                 fill=self.TEXT if idx == 0 else self.TEXT_DIM,
                 font=("Consolas", 9),
                 tags="hud",
             )
+
+        self.canvas.create_rectangle(right_x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
+        self.canvas.create_text(
+            right_x1 + 14,
+            y1 + 12,
+            anchor="nw",
+            text="JARVIS CORE",
+            fill=self.CYAN,
+            font=("Consolas", 10, "bold"),
+            tags="hud",
+        )
+        self.canvas.create_text(
+            right_x1 + 14,
+            y1 + 42,
+            anchor="nw",
+            text=f"STATUS   {self.status_var.get()}",
+            fill=self.TEXT,
+            font=("Consolas", 10),
+            tags="hud",
+        )
+        self.canvas.create_text(
+            right_x1 + 14,
+            y1 + 64,
+            anchor="nw",
+            text=f"DETAIL   {self.detail_var.get()[:32]}",
+            fill=self.TEXT_DIM,
+            font=("Consolas", 10),
+            tags="hud",
+        )
+        self.canvas.create_text(
+            right_x1 + 14,
+            y1 + 90,
+            anchor="nw",
+            text="HUD NODE ACTIVE",
+            fill=self.CYAN_SOFT,
+            font=("Consolas", 10),
+            tags="hud",
+        )
 
     def _draw_mic_icon(self) -> None:
         width = max(self.mic_canvas.winfo_width(), 260)

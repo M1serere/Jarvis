@@ -138,10 +138,7 @@ class MusicControlTool(BaseTool):
             selected_video = random.choice(long_videos)
             webbrowser.open(selected_video["url"])
 
-            return (
-                f"Запускаю музыку на YouTube: "
-                f"{selected_video['title']} ({selected_video['duration_text']})."
-            )
+            return "Открываю YouTube. Приятного прослушивания."
         except Exception:
             search_url = self.YOUTUBE_SEARCH_URL.format(
                 query=quote_plus(YOUTUBE_MUSIC_SEARCH_QUERY)

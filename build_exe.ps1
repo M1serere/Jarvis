@@ -6,8 +6,9 @@ $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $BuildAssetsDir = Join-Path $ProjectRoot "build_assets"
-$InstallerDir = Join-Path $ProjectRoot "installer"
 $DistDir = Join-Path $ProjectRoot "dist"
+$InstallerScriptPath = Join-Path $ProjectRoot "JarvisSetup.iss"
+$InstallerOutputPath = Join-Path $ProjectRoot "JarvisSetup.exe"
 $RootExePath = Join-Path $DistDir "Jarvis.exe"
 $AppExePath = Join-Path $DistDir "Jarvis\\Jarvis.exe"
 $IconPath = Join-Path $BuildAssetsDir "jarvis.ico"
@@ -142,6 +143,10 @@ function Invoke-PyInstallerBuild {
 }
 
 function Invoke-InnoSetupBuild {
+    if (-not (Test-Path $InstallerScriptPath)) {
+        throw "Installer script not found: $InstallerScriptPath"
+    }
+
     $compilerCandidates = @(
         "${env:ProgramFiles(x86)}\\Inno Setup 6\\ISCC.exe",
         "${env:ProgramFiles}\\Inno Setup 6\\ISCC.exe",
@@ -153,7 +158,7 @@ function Invoke-InnoSetupBuild {
         throw "Inno Setup compiler not found. Install Inno Setup 6 and rerun the script."
     }
 
-    & $compilerPath (Join-Path $InstallerDir "JarvisSetup.iss")
+    & $compilerPath $InstallerScriptPath
 }
 
 Ensure-BuildAssets
@@ -171,4 +176,5 @@ Write-Host ""
 Write-Host "Build finished."
 Write-Host "App folder: $DistDir\\Jarvis"
 Write-Host "App exe: $AppExePath"
-Write-Host "Installer output: $InstallerDir\\Output"
+Write-Host "Installer script: $InstallerScriptPath"
+Write-Host "Installer output: $InstallerOutputPath"

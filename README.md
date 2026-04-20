@@ -271,7 +271,7 @@ What the script does:
 
 * generates installer/exe icons from `j_logo.png`
 * builds `dist\Jarvis\Jarvis.exe` via PyInstaller
-* builds `installer\Output\JarvisSetup.exe` via Inno Setup 6
+* builds `JarvisSetup.exe` in the project root via Inno Setup 6
 
 Notes:
 

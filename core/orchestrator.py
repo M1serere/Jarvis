@@ -80,7 +80,7 @@ class JarvisOrchestrator:
             if name:
                 self.profile.set_name(name)
                 return OrchestratorResponse(
-                    response_text=f"Хорошо. Теперь я буду обращаться к тебе: {name}.",
+                    response_text=f"Хорошо. Теперь я буду обращаться к вам: {name}.",
                     raw_decision=empty_decision(),
                     approved=True,
                 )
@@ -90,7 +90,7 @@ class JarvisOrchestrator:
             if name:
                 self.profile.set_name(name)
                 return OrchestratorResponse(
-                    response_text=f"Запомнил. Твоё имя: {name}.",
+                    response_text=f"Запомнил. Ваше имя: {name}.",
                     raw_decision=empty_decision(),
                     approved=True,
                 )
@@ -103,7 +103,7 @@ class JarvisOrchestrator:
         }:
             name = self.profile.get_name()
             return OrchestratorResponse(
-                response_text=f"Я обращаюсь к тебе как: {name}.",
+                response_text=f"Я обращаюсь к вам как: {name}.",
                 raw_decision=empty_decision(),
                 approved=True,
             )
@@ -131,18 +131,19 @@ class JarvisOrchestrator:
             "джарвис, что ты обо мне помнишь",
             "что ты обо мне помнишь",
             "что ты помнишь обо мне",
+            "что ты знаешь обо мне",
         }:
             facts = self.facts_memory.get_facts()
             if not facts:
                 return OrchestratorResponse(
-                    response_text="Пока у меня нет сохранённых фактов о тебе.",
+                    response_text="Пока у меня нет сохранённых фактов о вас.",
                     raw_decision=empty_decision(),
                     approved=True,
                 )
 
             facts_text = "\n".join(f"{idx + 1}. {fact}" for idx, fact in enumerate(facts))
             return OrchestratorResponse(
-                response_text=f"Вот что я помню о тебе:\n{facts_text}",
+                response_text=f"Вот что я помню о вас:\n{facts_text}",
                 raw_decision=empty_decision(),
                 approved=True,
             )
@@ -276,7 +277,7 @@ class JarvisOrchestrator:
         return OrchestratorResponse(
             response_text=(
                 "Я жду подтверждение текущего действия. "
-                "Ответь 'да' или 'нет'."
+                "Пожалуйста, ответьте 'да' или 'нет'."
             ),
             raw_decision=empty_decision(),
             approved=False,
@@ -315,6 +316,7 @@ class JarvisOrchestrator:
             "поставь музыку",
             "продолжи музыку",
             "воспроизведи музыку",
+            "музыка",
         ]
         pause_music_triggers = [
             "выключи музыку",
@@ -501,7 +503,7 @@ class JarvisOrchestrator:
     def _speak_next_habr_news(self) -> OrchestratorResponse:
         if not self.memory.has_news_items():
             return OrchestratorResponse(
-                response_text="Сначала скажи 'покажи новости'.",
+                response_text="Сначала скажите 'покажи новости'.",
                 raw_decision=empty_decision(),
                 approved=False,
             )
@@ -541,7 +543,7 @@ class JarvisOrchestrator:
         current_item = self.memory.get_current_news()
         if current_item is None:
             return OrchestratorResponse(
-                response_text="Сначала скажи 'покажи новости', чтобы я открыл список.",
+                response_text="Сначала скажите 'покажи новости', чтобы я открыл список.",
                 raw_decision=empty_decision(),
                 approved=False,
             )
@@ -609,6 +611,8 @@ class JarvisOrchestrator:
         goodbye_triggers = {
             "джарвис, хорошая работа до встречи",
             "джарвис хорошая работа до встречи",
+            "джарвис, до встречи",
+            "джарвис, хорошая работа",
         }
 
         if cleaned_text not in goodbye_triggers:
@@ -734,7 +738,7 @@ class JarvisOrchestrator:
 
             if action is None:
                 return OrchestratorResponse(
-                    response_text="Уточни, пожалуйста: перевести ноутбук в сон или выключить?",
+                    response_text="Уточните, пожалуйста: перевести ноутбук в сон или выключить?",
                     raw_decision=empty_decision(),
                     approved=False,
                 )

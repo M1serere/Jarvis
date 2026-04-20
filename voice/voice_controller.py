@@ -145,7 +145,7 @@ class VoiceController:
 
         if not user_text:
             self.ui.set_status("Готов", "Не удалось распознать речь")
-            self.tts.speak("Я не расслышал, повтори.")
+            self.tts.speak("Я вас не расслышал, пожалуйста повторите.")
             self._set_idle_status()
             return True
 
@@ -158,7 +158,7 @@ class VoiceController:
         if self._is_sleep_command(user_text):
             self._is_awake = False
             self.ui.set_status("Готов", "Переход в режим ожидания")
-            self.tts.speak("Хорошо. Буду ждать обращения по ключевому слову.")
+            self.tts.speak("Вас понял. Буду ждать, когда вы позовёте.")
             self._set_idle_status()
             return False
 

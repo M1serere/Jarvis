@@ -878,6 +878,9 @@ class StatusWindow:
         center_y = height / 2 - 13
         accent = "#241CFF"
         accent_soft = "#4D46FF"
+        status_text = self.status_var.get().strip().lower()
+        detail_text = self.detail_var.get().strip().lower()
+        ring_outline = "#FFFFFF" if status_text == "готов" and "ожидание команды" in detail_text else accent_soft
         phase = time.monotonic() * 3.2
 
         self.mic_canvas.create_rectangle(0, 0, width, height, outline="", fill=self.PANEL)
@@ -892,7 +895,17 @@ class StatusWindow:
         capsule_top = center_y - capsule_h / 2
         capsule_right = center_x + capsule_w / 2
         capsule_bottom = center_y + capsule_h / 2
+        ring_radius = 42
+        ring_center_y = center_y + 10
 
+        self.mic_canvas.create_oval(
+            center_x - ring_radius,
+            ring_center_y - ring_radius,
+            center_x + ring_radius,
+            ring_center_y + ring_radius,
+            outline=ring_outline,
+            width=2,
+        )
         self.mic_canvas.create_oval(
             capsule_left,
             capsule_top,
@@ -989,8 +1002,8 @@ class StatusWindow:
                 points.extend([draw_x, base_y + wave / 2])
             self.mic_canvas.create_polygon(points, outline=accent, fill="", width=2, smooth=True)
 
-        draw_wave_cluster(center_x - 68, mirrored=False, phase_shift=0.0)
-        draw_wave_cluster(center_x + 68, mirrored=True, phase_shift=1.2)
+        draw_wave_cluster(center_x - 80, mirrored=False, phase_shift=0.0)
+        draw_wave_cluster(center_x + 80, mirrored=True, phase_shift=1.2)
 
     def _on_volume_slider_change(self, value: str) -> None:
         volume = max(0, min(int(float(value)), 100))

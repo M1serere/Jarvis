@@ -44,6 +44,9 @@ class JarvisOrchestrator:
         self.browser_window = BrowserWindowService()
         self.habr_news = HabrNewsService(http_client=HttpClient())
 
+        if hasattr(self.brain.adapter, "user_profile"):
+            self.brain.adapter.user_profile = self.profile
+
     def _set_status(self, status: str, detail: str = "") -> None:
         if self.status_ui is not None:
             self.status_ui.set_status(status, detail)

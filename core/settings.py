@@ -14,6 +14,7 @@ class AppSettings:
     voice_volume: int = 80
     autostart_enabled: bool = True
     overlay_mode: bool = True
+    installed_name_prompt_done: bool = False
 
 
 class SettingsStore:
@@ -30,6 +31,9 @@ class SettingsStore:
                 voice_volume=self._clamp_volume(data.get("voice_volume", 80)),
                 autostart_enabled=self._to_bool(data.get("autostart_enabled", True)),
                 overlay_mode=self._to_bool(data.get("overlay_mode", True)),
+                installed_name_prompt_done=self._to_bool(
+                    data.get("installed_name_prompt_done", False)
+                ),
             )
         except Exception:
             return AppSettings()
@@ -41,6 +45,9 @@ class SettingsStore:
             payload.get("autostart_enabled", True)
         )
         payload["overlay_mode"] = self._to_bool(payload.get("overlay_mode", False))
+        payload["installed_name_prompt_done"] = self._to_bool(
+            payload.get("installed_name_prompt_done", False)
+        )
         self._path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2),
             encoding="utf-8",

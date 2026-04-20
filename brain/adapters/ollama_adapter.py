@@ -123,6 +123,8 @@ class OllamaBrainAdapter(BaseBrainAdapter):
         context_block = "\n".join(context_lines) if context_lines else "no prior context"
 
 
+        user_block = f"\nKnown user name:\n{user_name}\n" if user_name else ""
+
         return f"""
 You are the routing brain for a personal assistant called Jarvis.
 
@@ -133,6 +135,7 @@ Available tools:
 
 Recent conversation:
 {context_block}
+{user_block}
 
 Current user message:
 {user_text}
@@ -172,6 +175,18 @@ Routing rules:
      "filename": "...",
      "content": "..."
    }}
+
+   If the user asks for a file for a specific program, also pass:
+   {{
+     "file_type": "txt" | "docx" | "xlsx" | "pptx"
+   }}
+
+   Examples:
+   - Word -> "file_type": "docx"
+   - Excel -> "file_type": "xlsx"
+   - PowerPoint -> "file_type": "pptx"
+
+   Files are created on the Desktop by default, so do not ask the tool to use the workspace unless the user explicitly asked for another location.
 
 7. If the user asks to append text, replace text, or fully rewrite a file, use edit_file with:
    mode = "append" | "replace_text" | "replace_all"

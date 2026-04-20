@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import random
 import re
+import sys
 import threading
+from tkinter import messagebox, simpledialog
 
 from core import autostart
 from core.config import WORK_TIMER_SECONDS
@@ -47,12 +49,66 @@ class VoiceController:
         self._is_awake = False
         self._sync_autostart()
 
+    def _get_user_name(self) -> str:
+        return self.orchestrator.profile.get_name()
+
+    def _address_user(self, message: str) -> str:
+        return f"{self._get_user_name()}, {message}"
+
+    def schedule_installed_name_prompt_if_needed(self) -> None:
+        if not getattr(sys, "frozen", False):
+            return
+
+        if self.settings.installed_name_prompt_done:
+            return
+
+        if self.orchestrator.profile.has_name():
+            self._mark_installed_name_prompt_done()
+            return
+
+        self.ui.root.after(350, self._show_installed_name_prompt)
+
+    def _mark_installed_name_prompt_done(self) -> None:
+        self.settings = AppSettings(
+            voice_volume=self.settings.voice_volume,
+            autostart_enabled=self.settings.autostart_enabled,
+            overlay_mode=self.settings.overlay_mode,
+            installed_name_prompt_done=True,
+        )
+        try:
+            self.settings_store.save(self.settings)
+        except Exception:
+            pass
+
+    def _show_installed_name_prompt(self) -> None:
+        self.ui.set_status("Настройка", "Первый запуск: имя пользователя")
+
+        messagebox.showinfo(
+            "Jarvis",
+            "Похоже, это первый запуск установленного Jarvis.\n\nКак мне к вам обращаться?",
+        )
+
+        name = simpledialog.askstring(
+            "Первый запуск",
+            "Введите ваше имя:",
+            parent=self.ui.root,
+        )
+
+        clean_name = (name or "").strip()
+        if clean_name:
+            self.orchestrator.profile.set_name(clean_name)
+            self.tts.speak(f"Приятно познакомиться, {clean_name}. Я запомнил ваше имя.")
+
+        self._mark_installed_name_prompt_done()
+        self._set_idle_status()
+
     def set_voice_volume(self, volume: int) -> None:
         safe_volume = max(0, min(int(volume), 100))
         self.settings = AppSettings(
             voice_volume=safe_volume,
             autostart_enabled=self.settings.autostart_enabled,
             overlay_mode=self.settings.overlay_mode,
+            installed_name_prompt_done=self.settings.installed_name_prompt_done,
         )
         self.tts.set_volume(safe_volume)
         try:
@@ -68,6 +124,7 @@ class VoiceController:
             voice_volume=self.settings.voice_volume,
             autostart_enabled=desired_state if success else autostart.is_enabled(),
             overlay_mode=self.settings.overlay_mode,
+            installed_name_prompt_done=self.settings.installed_name_prompt_done,
         )
         self.ui.set_autostart_value(self.settings.autostart_enabled)
 
@@ -83,12 +140,14 @@ class VoiceController:
                 voice_volume=self.settings.voice_volume,
                 autostart_enabled=actual_state and self.settings.autostart_enabled,
                 overlay_mode=self.settings.overlay_mode,
+                installed_name_prompt_done=self.settings.installed_name_prompt_done,
             )
         else:
             self.settings = AppSettings(
                 voice_volume=self.settings.voice_volume,
                 autostart_enabled=False,
                 overlay_mode=self.settings.overlay_mode,
+                installed_name_prompt_done=self.settings.installed_name_prompt_done,
             )
 
         self.ui.set_autostart_value(self.settings.autostart_enabled)
@@ -103,6 +162,7 @@ class VoiceController:
             voice_volume=self.settings.voice_volume,
             autostart_enabled=self.settings.autostart_enabled,
             overlay_mode=bool(enabled),
+            installed_name_prompt_done=self.settings.installed_name_prompt_done,
         )
         try:
             self.settings_store.save(self.settings)
@@ -114,9 +174,9 @@ class VoiceController:
 
     def notify_break(self) -> None:
         reminder_options = [
-            "Госпожа, вы работаете больше трёх часов. Не хотите ли сделать перерыв?",
-            "Госпожа, вы уже работаете больше трёх часов. Возможно, пора немного отдохнуть.",
-            "Госпожа, прошло уже более трёх часов работы. Может быть, стоит сделать небольшой перерыв?",
+            self._address_user("вы работаете больше трёх часов. Не хотите ли сделать перерыв?"),
+            self._address_user("вы уже работаете больше трёх часов. Возможно, пора немного отдохнуть."),
+            self._address_user("прошло уже более трёх часов работы. Может быть, стоит сделать небольшой перерыв?"),
         ]
         reminder = random.choice(reminder_options)
         print("[TIMER] Пора сделать перерыв")
@@ -139,7 +199,7 @@ class VoiceController:
     def run_once(self) -> bool:
         self.ui.set_status("Слушает", "Жду голосовую команду")
         user_text = self.stt.listen(timeout=None, phrase_time_limit=None)
-        
+
         if user_text and self.ui:
             self.ui.add_user_command(user_text)
 
@@ -183,7 +243,7 @@ class VoiceController:
 
             self._is_awake = True
             self.ui.set_status("Активирован", "Wake word detected")
-            self.tts.speak("Чем могу помочь, госпожа?")
+            self.tts.speak(self._address_user("чем могу помочь?"))
 
             while self._is_awake:
                 if not self.run_once():

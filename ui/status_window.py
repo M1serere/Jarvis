@@ -24,6 +24,7 @@ class StatusWindow:
     PANEL = "#071f33"
     PANEL_2 = "#0a2740"
     LINE = "#123a58"
+    BORDER_WIDTH = 2
     CYAN = "#69E6FF"
     CYAN_SOFT = "#3AA9D6"
     TEXT = "#D8F6FF"
@@ -139,7 +140,7 @@ class StatusWindow:
             self.main,
             bg=self.PANEL,
             highlightbackground=self.LINE,
-            highlightthickness=1,
+            highlightthickness=self.BORDER_WIDTH,
         )
         self.left_panel.pack(side="left", fill="both", expand=True, padx=(0, 10))
 
@@ -148,7 +149,7 @@ class StatusWindow:
             bg=self.PANEL,
             width=320,
             highlightbackground=self.LINE,
-            highlightthickness=1,
+            highlightthickness=self.BORDER_WIDTH,
         )
         self.right_panel.pack(side="right", fill="y")
         self.right_panel.pack_propagate(False)
@@ -186,7 +187,7 @@ class StatusWindow:
             self.canvas,
             bg=self.PANEL_2,
             highlightbackground=self.LINE,
-            highlightthickness=1,
+            highlightthickness=self.BORDER_WIDTH,
         )
         self.chat_panel_window = self.canvas.create_window(
             0,
@@ -1072,7 +1073,15 @@ class StatusWindow:
         values: list[float],
         value_text: str,
     ) -> None:
-        self.canvas.create_rectangle(x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
+        self.canvas.create_rectangle(
+            x1,
+            y1,
+            x2,
+            y2,
+            outline=self.LINE,
+            width=self.BORDER_WIDTH,
+            tags="hud",
+        )
         self.canvas.create_text(
             x1 + 12,
             y1 + 10,
@@ -1130,7 +1139,15 @@ class StatusWindow:
         left_x2 = split
         right_x1 = split + gap
 
-        self.canvas.create_rectangle(x1, y1, left_x2, y2, outline=self.LINE, width=1, tags="hud")
+        self.canvas.create_rectangle(
+            x1,
+            y1,
+            left_x2,
+            y2,
+            outline=self.LINE,
+            width=self.BORDER_WIDTH,
+            tags="hud",
+        )
         self.canvas.create_text(
             x1 + 14,
             y1 + 12,
@@ -1164,7 +1181,15 @@ class StatusWindow:
                 tags="hud",
             )
 
-        self.canvas.create_rectangle(right_x1, y1, x2, y2, outline=self.LINE, width=1, tags="hud")
+        self.canvas.create_rectangle(
+            right_x1,
+            y1,
+            x2,
+            y2,
+            outline=self.LINE,
+            width=self.BORDER_WIDTH,
+            tags="hud",
+        )
         self.canvas.create_text(
             right_x1 + 14,
             y1 + 12,
@@ -1207,11 +1232,12 @@ class StatusWindow:
         height = max(self.mic_canvas.winfo_height(), 110)
         center_x = width / 2
         center_y = height / 2 - 13
-        accent = "#241CFF"
-        accent_soft = "#4D46FF"
         status_text = self.status_var.get().strip().lower()
         detail_text = self.detail_var.get().strip().lower()
-        ring_outline = "#FFFFFF" if status_text == "готов" and "ожидание команды" in detail_text else accent_soft
+        waiting_for_command = status_text == "готов" and "ожидание команды" in detail_text
+        accent = "#FFFFFF" if waiting_for_command else "#241CFF"
+        accent_soft = "#D8F6FF" if waiting_for_command else "#4D46FF"
+        ring_outline = accent
         phase = time.monotonic() * 3.2
 
         self.mic_canvas.create_rectangle(0, 0, width, height, outline="", fill=self.PANEL)

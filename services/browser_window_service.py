@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ctypes
 import time
+from ctypes import wintypes
 
 
 class BrowserWindowService:
@@ -30,6 +31,26 @@ class BrowserWindowService:
     def __init__(self) -> None:
         self.user32 = ctypes.windll.user32
         self.kernel32 = ctypes.windll.kernel32
+        self._configure_winapi_signatures()
+
+    def _configure_winapi_signatures(self) -> None:
+        self.user32.OpenClipboard.argtypes = [wintypes.HWND]
+        self.user32.OpenClipboard.restype = wintypes.BOOL
+        self.user32.EmptyClipboard.argtypes = []
+        self.user32.EmptyClipboard.restype = wintypes.BOOL
+        self.user32.CloseClipboard.argtypes = []
+        self.user32.CloseClipboard.restype = wintypes.BOOL
+        self.user32.SetClipboardData.argtypes = [wintypes.UINT, wintypes.HANDLE]
+        self.user32.SetClipboardData.restype = wintypes.HANDLE
+
+        self.kernel32.GlobalAlloc.argtypes = [wintypes.UINT, ctypes.c_size_t]
+        self.kernel32.GlobalAlloc.restype = wintypes.HGLOBAL
+        self.kernel32.GlobalLock.argtypes = [wintypes.HGLOBAL]
+        self.kernel32.GlobalLock.restype = ctypes.c_void_p
+        self.kernel32.GlobalUnlock.argtypes = [wintypes.HGLOBAL]
+        self.kernel32.GlobalUnlock.restype = wintypes.BOOL
+        self.kernel32.GlobalFree.argtypes = [wintypes.HGLOBAL]
+        self.kernel32.GlobalFree.restype = wintypes.HGLOBAL
 
     def bring_to_front(
         self,
@@ -135,12 +156,17 @@ class BrowserWindowService:
     def _set_clipboard_text(self, text: str) -> None:
         data = ctypes.create_unicode_buffer(text)
 
-        if not self.user32.OpenClipboard(None):
+        for _ in range(6):
+            if self.user32.OpenClipboard(None):
+                break
+            time.sleep(0.05)
+        else:
             raise OSError("Не удалось открыть буфер обмена.")
 
         handle = None
         try:
-            self.user32.EmptyClipboard()
+            if not self.user32.EmptyClipboard():
+                raise OSError("Не удалось очистить буфер обмена.")
 
             size = ctypes.sizeof(data)
             handle = self.kernel32.GlobalAlloc(self.GMEM_MOVEABLE, size)

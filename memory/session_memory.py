@@ -18,11 +18,19 @@ class PendingQuestion:
 
 
 @dataclass
+class NewsItem:
+    title: str
+    url: str
+
+
+@dataclass
 class SessionMemory:
     history: list[dict[str, str]] = field(default_factory=list)
     pending_action: PendingAction | None = None
     pending_question: PendingQuestion | None = None
     last_file: str | None = None
+    news_items: list[NewsItem] = field(default_factory=list)
+    news_index: int = 0
 
     def add_user_message(self, text: str) -> None:
         self.history.append({"role": "user", "text": text})
@@ -72,3 +80,28 @@ class SessionMemory:
 
     def get_last_file(self) -> str | None:
         return self.last_file
+
+    def set_news_items(self, items: list[NewsItem]) -> None:
+        self.news_items = items
+        self.news_index = 0
+
+    def has_news_items(self) -> bool:
+        return bool(self.news_items)
+
+    def get_current_news(self) -> NewsItem | None:
+        if not self.news_items:
+            return None
+        if self.news_index < 0 or self.news_index >= len(self.news_items):
+            self.news_index = 0
+        return self.news_items[self.news_index]
+
+    def move_to_next_news(self) -> NewsItem | None:
+        if not self.news_items:
+            return None
+        if self.news_index < len(self.news_items) - 1:
+            self.news_index += 1
+        return self.news_items[self.news_index]
+
+    def clear_news_items(self) -> None:
+        self.news_items = []
+        self.news_index = 0

@@ -7,12 +7,15 @@ from core.config import BASE_DIR
 from core.logger import setup_logger
 from core.models import OrchestratorResponse, UserMessage, empty_decision
 from memory.facts_memory import FactsMemory
+from memory.session_memory import NewsItem
 from memory.persistent_memory import PersistentMemory
 from memory.references import ReferenceResolver
 from memory.session_memory import SessionMemory
 from memory.user_profile import UserProfile
 from safety.guard import SafetyGuard
 from safety.messages import build_confirmation_message
+from services.habr_news_service import HABR_DAILY_NEWS_URL, HabrNewsService
+from services.http_client import HttpClient
 from tools.registry import ToolRegistry
 
 
@@ -37,6 +40,7 @@ class JarvisOrchestrator:
         self.profile = UserProfile(self.persistent)
         self.references = ReferenceResolver()
         self.facts_memory = FactsMemory(self.persistent)
+        self.habr_news = HabrNewsService(http_client=HttpClient())
 
     def _set_status(self, status: str, detail: str = "") -> None:
         if self.status_ui is not None:
@@ -156,6 +160,12 @@ class JarvisOrchestrator:
             self.memory.add_assistant_message(window_response.response_text)
             self.logger.debug("Assistant response: %s", window_response.response_text)
             return window_response
+
+        news_response = self._handle_habr_news_request(text)
+        if news_response is not None:
+            self.memory.add_assistant_message(news_response.response_text)
+            self.logger.debug("Assistant response: %s", news_response.response_text)
+            return news_response
 
         music_response = self._handle_explicit_music_request(text)
         if music_response is not None:
@@ -406,6 +416,136 @@ class JarvisOrchestrator:
 
         return None
 
+    def _handle_habr_news_request(self, text: str) -> OrchestratorResponse | None:
+        cleaned_text = self._normalize_phrase(text)
+
+        show_news_triggers = {
+            "покажи новости",
+            "покажи новость",
+            "покажи новости на хабре",
+            "открой новости",
+            "открой новости на хабре",
+            "новости",
+            "новости хабр",
+            "новости на хабре",
+            "покажи свежие новости",
+        }
+        next_news_triggers = {
+            "дальше",
+            "следующая",
+            "следующая новость",
+            "покажи следующую новость",
+        }
+        open_news_triggers = {
+            "это интересно",
+            "открой эту",
+            "открой эту новость",
+            "открой новость",
+        }
+
+        if cleaned_text in show_news_triggers:
+            return self._start_habr_news_browse()
+
+        if cleaned_text in next_news_triggers:
+            return self._speak_next_habr_news()
+
+        if cleaned_text in open_news_triggers:
+            return self._open_current_habr_news()
+
+        return None
+
+    def _start_habr_news_browse(self) -> OrchestratorResponse:
+        try:
+            entries = self.habr_news.get_daily_news(limit=10)
+        except Exception as exc:
+            self.logger.exception("Failed to fetch Habr news.")
+            return OrchestratorResponse(
+                response_text=f"Не удалось получить новости с Habr: {exc}",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        if not entries:
+            return OrchestratorResponse(
+                response_text="Не удалось найти новости на Habr.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        self.memory.set_news_items(
+            [NewsItem(title=entry.title, url=entry.url) for entry in entries]
+        )
+        self._handle_tool_call("open_url", {"url": HABR_DAILY_NEWS_URL})
+        current_item = self.memory.get_current_news()
+
+        if current_item is None:
+            return OrchestratorResponse(
+                response_text="Не удалось подготовить список новостей.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        return OrchestratorResponse(
+            response_text=(
+                f"Открываю Habr Новости. Первая новость: {current_item.title}. "
+                "Скажи 'дальше', чтобы перейти к следующей, или 'открой эту'."
+            ),
+            raw_decision=empty_decision(),
+            approved=True,
+        )
+
+    def _speak_next_habr_news(self) -> OrchestratorResponse:
+        if not self.memory.has_news_items():
+            return OrchestratorResponse(
+                response_text="Сначала скажи 'покажи новости'.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        current_before_move = self.memory.get_current_news()
+        next_item = self.memory.move_to_next_news()
+
+        if next_item is None:
+            return OrchestratorResponse(
+                response_text="Список новостей сейчас недоступен.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        if current_before_move is not None and current_before_move.url == next_item.url:
+            return OrchestratorResponse(
+                response_text=f"Это последняя новость на сегодня: {next_item.title}.",
+                raw_decision=empty_decision(),
+                approved=True,
+            )
+
+        return OrchestratorResponse(
+            response_text=f"Следующая новость: {next_item.title}.",
+            raw_decision=empty_decision(),
+            approved=True,
+        )
+
+    def _open_current_habr_news(self) -> OrchestratorResponse:
+        current_item = self.memory.get_current_news()
+        if current_item is None:
+            return OrchestratorResponse(
+                response_text="Сначала скажи 'покажи новости', чтобы я открыл список.",
+                raw_decision=empty_decision(),
+                approved=False,
+            )
+
+        result = self._handle_tool_call("open_url", {"url": current_item.url})
+        self.memory.clear_news_items()
+        return OrchestratorResponse(
+            response_text=(
+                f"{result}. Перехожу в режим ожидания. "
+                "Когда будете готовы, скажите 'Джарвис'."
+            ),
+            raw_decision=empty_decision(),
+            approved=True,
+            keep_awake=False,
+        )
+
     def _extract_volume_value(self, text: str) -> int | None:
         patterns = [
             r"громкость\s+(\d{1,3})",
@@ -612,3 +752,8 @@ class JarvisOrchestrator:
 
     def _is_youtube_source(self, text: str) -> bool:
         return any(word in text for word in self.MUSIC_YOUTUBE_WORDS)
+
+    @staticmethod
+    def _normalize_phrase(text: str) -> str:
+        cleaned = re.sub(r"[^\w\s-]", " ", text.lower())
+        return re.sub(r"\s+", " ", cleaned).strip()

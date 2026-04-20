@@ -89,6 +89,7 @@ class OrchestratorResponse:
     response_text: str
     raw_decision: AssistantDecision
     approved: bool = True
+    keep_awake: bool = True
 
 
 def empty_decision() -> AssistantDecision:

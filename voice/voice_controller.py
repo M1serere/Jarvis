@@ -148,6 +148,10 @@ class VoiceController:
         response = self.orchestrator.handle_user_input(user_text)
         self.ui.set_status("Говорит", "Озвучиваю ответ")
         self.tts.speak(response.response_text)
+        if not response.keep_awake:
+            self._is_awake = False
+            self.ui.set_status("Готов", "Ожидание wake word")
+            return False
         self._set_idle_status()
         return True
 

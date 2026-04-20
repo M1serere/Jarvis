@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-from typing import Any
 
 import requests
 from pydantic import ValidationError
@@ -66,15 +65,16 @@ class OllamaBrainAdapter(BaseBrainAdapter):
         if not raw_response:
             return AssistantDecision(
                 decision_type="respond",
-                response_text="Я не смог сформировать ответ через Ollama.",
+                response_text="\u042f \u043d\u0435 \u0441\u043c\u043e\u0433 \u0441\u0444\u043e\u0440\u043c\u0438\u0440\u043e\u0432\u0430\u0442\u044c \u043e\u0442\u0432\u0435\u0442 \u0447\u0435\u0440\u0435\u0437 Ollama.",
             )
 
         try:
             try:
                 parsed = json.loads(raw_response)
             except json.JSONDecodeError:
-            # fallback: вытащить JSON из текста
+                # fallback: extract a JSON object from a text response
                 import re
+
                 match = re.search(r"\{.*\}", raw_response, re.DOTALL)
                 if match:
                     parsed = json.loads(match.group(0))
@@ -85,8 +85,8 @@ class OllamaBrainAdapter(BaseBrainAdapter):
             return AssistantDecision(
                 decision_type="respond",
                 response_text=(
-                    "Я получил некорректный ответ от локальной модели. "
-                    "Проверь промпт или выбери другую модель."
+                    "\u042f \u043f\u043e\u043b\u0443\u0447\u0438\u043b \u043d\u0435\u043a\u043e\u0440\u0440\u0435\u043a\u0442\u043d\u044b\u0439 \u043e\u0442\u0432\u0435\u0442 \u043e\u0442 \u043b\u043e\u043a\u0430\u043b\u044c\u043d\u043e\u0439 \u043c\u043e\u0434\u0435\u043b\u0438. "
+                    "\u041f\u0440\u043e\u0432\u0435\u0440\u044c \u043f\u0440\u043e\u043c\u043f\u0442 \u0438\u043b\u0438 \u0432\u044b\u0431\u0435\u0440\u0438 \u0434\u0440\u0443\u0433\u0443\u044e \u043c\u043e\u0434\u0435\u043b\u044c."
                 ),
             )
 
@@ -121,8 +121,6 @@ class OllamaBrainAdapter(BaseBrainAdapter):
 
         tools_block = "\n".join(tools_lines) if tools_lines else "- no tools available"
         context_block = "\n".join(context_lines) if context_lines else "no prior context"
-
-
         user_block = f"\nKnown user name:\n{user_name}\n" if user_name else ""
 
         return f"""

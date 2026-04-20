@@ -12,12 +12,7 @@ from core.config import UI_WINDOW_TITLE
 from services.system_monitor import SystemMonitor
 from ui.windows_tray import WindowsTrayIcon
 
-
-import ctypes
-import math
 import sys
-import time
-import tkinter as tk
 
 class StatusWindow:
     BG = "#03131f"
@@ -44,7 +39,6 @@ class StatusWindow:
         self.root = tk.Tk()
         self.root.title(UI_WINDOW_TITLE)
         self.root.configure(bg=self.BG)
-        #self.root.protocol("WM_DELETE_WINDOW", self._exit_app)
         self.root.protocol("WM_DELETE_WINDOW", self._hide_to_tray)
 
         self.overlay_mode = overlay_mode

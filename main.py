@@ -1,5 +1,3 @@
-import threading
-
 import ctypes
 import sys
 import threading
@@ -11,9 +9,6 @@ if sys.platform == "win32":
         )
     except Exception:
         pass
-
-from voice.voice_controller import VoiceController
-from voice.wake_word import WakeWordListener
 
 from voice.voice_controller import VoiceController
 from voice.wake_word import WakeWordListener

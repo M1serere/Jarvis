@@ -15,6 +15,7 @@ $desktopShortcut = Join-Path ([Environment]::GetFolderPath("Desktop")) "$appName
 $startMenuShortcut = Join-Path (
     [Environment]::GetFolderPath("Programs")
 ) "$appName\$appName.lnk"
+$scriptInstallDir = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $PSCommandPath }
 
 function Write-Step {
     param([string]$Message)
@@ -64,6 +65,60 @@ function Remove-DirectoryIfExists {
     }
 }
 
+function Test-IsSubPath {
+    param(
+        [Parameter(Mandatory = $true)][string]$ParentPath,
+        [Parameter(Mandatory = $true)][string]$ChildPath
+    )
+
+    try {
+        $resolvedParent = [System.IO.Path]::GetFullPath($ParentPath).TrimEnd('\')
+        $resolvedChild = [System.IO.Path]::GetFullPath($ChildPath).TrimEnd('\')
+        return $resolvedChild.StartsWith($resolvedParent, [System.StringComparison]::OrdinalIgnoreCase)
+    }
+    catch {
+        return $false
+    }
+}
+
+function Find-BundledUninstaller {
+    param([Parameter(Mandatory = $true)][string]$InstallDir)
+
+    if (-not (Test-Path -LiteralPath $InstallDir)) {
+        return $null
+    }
+
+    return Get-ChildItem -LiteralPath $InstallDir -Filter "unins*.exe" -File -ErrorAction SilentlyContinue |
+        Sort-Object LastWriteTime -Descending |
+        Select-Object -First 1
+}
+
+function Start-DelayedDirectoryRemoval {
+    param([Parameter(Mandatory = $true)][string]$Path)
+
+    $targetPath = [System.IO.Path]::GetFullPath($Path)
+    if ([string]::IsNullOrWhiteSpace($targetPath) -or $targetPath.Length -lt 4) {
+        throw "Refusing to remove suspicious path: '$Path'"
+    }
+
+    $tempScriptPath = Join-Path ([System.IO.Path]::GetTempPath()) ("jarvis_cleanup_{0}.ps1" -f ([guid]::NewGuid().ToString("N")))
+    $cleanupScript = @"
+Start-Sleep -Seconds 2
+if (Test-Path -LiteralPath '$targetPath') {
+    Remove-Item -LiteralPath '$targetPath' -Recurse -Force -ErrorAction SilentlyContinue
+}
+Remove-Item -LiteralPath '$tempScriptPath' -Force -ErrorAction SilentlyContinue
+"@
+
+    Set-Content -LiteralPath $tempScriptPath -Value $cleanupScript -Encoding UTF8
+    Start-Process -FilePath "powershell.exe" -ArgumentList @(
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-WindowStyle", "Hidden",
+        "-File", $tempScriptPath
+    ) | Out-Null
+}
+
 function Get-UninstallEntry {
     $registryRoots = @(
         "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall",
@@ -82,9 +137,13 @@ function Get-UninstallEntry {
                 continue
             }
 
-            $displayName = [string]$props.DisplayName
-            $installLocation = [string]$props.InstallLocation
-            $uninstallString = [string]$props.UninstallString
+            $displayNameProperty = $props.PSObject.Properties["DisplayName"]
+            $installLocationProperty = $props.PSObject.Properties["InstallLocation"]
+            $uninstallStringProperty = $props.PSObject.Properties["UninstallString"]
+
+            $displayName = if ($null -ne $displayNameProperty) { [string]$displayNameProperty.Value } else { "" }
+            $installLocation = if ($null -ne $installLocationProperty) { [string]$installLocationProperty.Value } else { "" }
+            $uninstallString = if ($null -ne $uninstallStringProperty) { [string]$uninstallStringProperty.Value } else { "" }
 
             if (
                 $displayName -eq $appName -or
@@ -131,7 +190,12 @@ function Start-InnoUninstall {
     }
 
     if ($PSCmdlet.ShouldProcess($exePath, "Run bundled uninstaller")) {
-        $arguments = @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART")
+        $existingArguments = $trimmed.Substring($trimmed.IndexOf($exePath) + $exePath.Length).Trim()
+        $arguments = @()
+        if (-not [string]::IsNullOrWhiteSpace($existingArguments)) {
+            $arguments += $existingArguments
+        }
+        $arguments += @("/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART")
         $process = Start-Process -FilePath $exePath -ArgumentList $arguments -PassThru -Wait
         if ($process.ExitCode -ne 0) {
             throw "Bundled uninstaller exited with code $($process.ExitCode)."
@@ -166,8 +230,23 @@ if ($null -ne $uninstallEntry -and -not [string]::IsNullOrWhiteSpace($uninstallE
 }
 
 if (-not $usedBundledUninstaller) {
+    $bundledUninstaller = Find-BundledUninstaller -InstallDir $installDir
+    if ($null -ne $bundledUninstaller) {
+        Write-Step "Found bundled uninstaller in install directory."
+        $usedBundledUninstaller = Start-InnoUninstall -UninstallString ('"{0}"' -f $bundledUninstaller.FullName)
+    }
+}
+
+if (-not $usedBundledUninstaller) {
     Write-Step "Bundled uninstaller not found. Removing install directory manually."
-    Remove-DirectoryIfExists -Path $installDir
+    if (Test-IsSubPath -ParentPath $installDir -ChildPath $scriptInstallDir) {
+        if ($PSCmdlet.ShouldProcess($installDir, "Schedule delayed directory removal")) {
+            Write-Step "Current script is inside install directory. Scheduling delayed cleanup."
+            Start-DelayedDirectoryRemoval -Path $installDir
+        }
+    } else {
+        Remove-DirectoryIfExists -Path $installDir
+    }
 }
 
 if ($RemoveData) {

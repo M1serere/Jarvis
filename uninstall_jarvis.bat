@@ -30,15 +30,16 @@ if errorlevel 2 set "REMOVE_DATA_ARG=-RemoveData"
 
 echo.
 echo Requesting permission to uninstall Jarvis...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Start-Process PowerShell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File ""%PS_SCRIPT%"" %REMOVE_DATA_ARG%'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+ "$proc = Start-Process PowerShell -Verb RunAs -ArgumentList '-NoProfile -ExecutionPolicy Bypass -File ""%PS_SCRIPT%"" %REMOVE_DATA_ARG%' -PassThru -Wait; exit $proc.ExitCode"
 
 if errorlevel 1 (
     echo.
-    echo Failed to start the uninstaller.
+    echo Uninstaller failed.
     pause
     exit /b 1
 )
 
 echo.
-echo The uninstaller has been launched.
+echo Uninstall completed.
 pause

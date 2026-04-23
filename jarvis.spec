@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_all
@@ -27,6 +28,32 @@ for package_name in (
     datas += pkg_datas
     binaries += pkg_binaries
     hiddenimports += pkg_hiddenimports
+
+python_tcl_root = Path(sys.base_prefix) / "tcl"
+explicit_tcl_dirs = []
+
+if python_tcl_root.exists():
+    tcl_dirs = sorted(
+        path for path in python_tcl_root.iterdir()
+        if path.is_dir() and path.name.lower().startswith("tcl")
+    )
+    tk_dirs = sorted(
+        path for path in python_tcl_root.iterdir()
+        if path.is_dir() and path.name.lower().startswith("tk")
+    )
+
+    if tcl_dirs:
+        explicit_tcl_dirs.append((tcl_dirs[-1], "_tcl_data"))
+    if tk_dirs:
+        explicit_tcl_dirs.append((tk_dirs[-1], "_tk_data"))
+
+for source_dir, dest_dir in explicit_tcl_dirs:
+    if source_dir.exists():
+        for item in source_dir.rglob("*"):
+            if item.is_file():
+                relative_parent = item.relative_to(source_dir).parent
+                target_dir = Path(dest_dir) / relative_parent
+                datas.append((str(item), str(target_dir)))
 
 hiddenimports += [
     "tkinter",

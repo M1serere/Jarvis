@@ -1,3 +1,6 @@
+Полностью рабочая, но достаточно кривая версия.
+По итогам тестирования друзьями выявлено большое количество недочётов и багов. Вследствие чего будет создана новая версия с нуля и учтены все замечания, а так же она будет существенно улучшена.
+На данный момент эта версия будет висеть тут, так как некоторые наработки будут использоваться в новой версии. Позже будет удалена за ненадобностью.
 # 🤖 JARVIS — AI Voice Assistant for Desktop Automation
 
 > A modular, production-style voice assistant inspired by JARVIS, capable of understanding speech, executing system-level actions, and evolving through memory and tools.
